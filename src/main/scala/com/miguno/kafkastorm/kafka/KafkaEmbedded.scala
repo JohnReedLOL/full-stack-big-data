@@ -57,7 +57,8 @@ class KafkaEmbedded(config: Properties = new Properties) extends LazyLogging {
     zkConnectLookup match {
       case Some(zkConnect) => zkConnect
       case _ =>
-        logger.warn(s"zookeeper.connect is not configured -- falling back to default setting $defaultZkConnect")
+        logger.warn((s"zookeeper.connect is not configured -- falling back to default setting $defaultZkConnect" +
+          Pos()).wrap)
         defaultZkConnect
     }
   }
@@ -66,23 +67,29 @@ class KafkaEmbedded(config: Properties = new Properties) extends LazyLogging {
    * Start the broker.
    */
   def start() {
-    logger.debug(s"Starting embedded Kafka broker at $brokerList (with ZK server at $zookeeperConnect) ...")
+    logger.debug((s"Starting embedded Kafka broker at $brokerList (with ZK server at $zookeeperConnect) ..." +
+      Pos()).wrap)
     kafka.startup()
-    logger.debug(s"Startup of embedded Kafka broker at $brokerList completed (with ZK server at $zookeeperConnect)")
+    logger.debug((s"Startup of embedded Kafka broker at $brokerList completed (with ZK server at $zookeeperConnect)" +
+      Pos()).wrap)
   }
 
   /**
    * Stop the broker.
    */
   def stop() {
-    logger.debug(s"Shutting down embedded Kafka broker at $brokerList (with ZK server at $zookeeperConnect)...")
+    logger.debug((s"Shutting down embedded Kafka broker at $brokerList (with ZK server at $zookeeperConnect)..." +
+      Pos()).wrap)
     kafka.shutdown()
     FileUtils.deleteQuietly(logDir)
-    logger.debug(s"Shutdown of embedded Kafka broker at $brokerList completed (with ZK server at $zookeeperConnect)")
+    logger.debug((s"Shutdown of embedded Kafka broker at $brokerList completed (with ZK server at $zookeeperConnect)" +
+      Pos()).wrap)
   }
 
   def createTopic(topic: String, partitions: Int = 1, replicationFactor: Int = 1, config: Properties = new Properties): Unit = {
-    logger.debug(s"Creating topic { name: $topic, partitions: $partitions, replicationFactor: $replicationFactor, config: $config }")
+    logger.debug(
+      (s"Creating topic { name: $topic, partitions: $partitions, replicationFactor: $replicationFactor, config: $config }" +
+        Pos()).wrap)
     val sessionTimeout = 10.seconds
     val connectionTimeout = 8.seconds
     // Note: You must initialize the ZkClient with ZKStringSerializer.  If you don't, then createTopic() will only

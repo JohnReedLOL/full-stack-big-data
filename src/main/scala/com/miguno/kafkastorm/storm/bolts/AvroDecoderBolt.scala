@@ -59,8 +59,9 @@ class AvroDecoderBolt[T <: SpecificRecordBase : Manifest](inputField: String = "
     val readTry = Try(tuple.getBinaryByField(inputField))
     readTry match {
       case Success(bytes) if bytes != null => decodeAndEmit(bytes, collector)
-      case Success(_) => log.error("Reading from input tuple returned null")
-      case Failure(e) => log.error("Could not read from input tuple: " + Throwables.getStackTraceAsString(e))
+      case Success(_) => log.error(("Reading from input tuple returned null" + Pos()).wrap)
+      case Failure(e) => log.error(("Could not read from input tuple: " +
+        Throwables.getStackTraceAsString(e) + Pos()).wrap)
     }
   }
 
@@ -69,10 +70,11 @@ class AvroDecoderBolt[T <: SpecificRecordBase : Manifest](inputField: String = "
     val decodeTry = Injection.invert(bytes)
     decodeTry match {
       case Success(pojo) =>
-        log.debug("Binary data decoded into pojo: " + pojo)
+        log.debug(("Binary data decoded into pojo: " + pojo + Pos()).wrap)
         collector.emit(new Values(pojo))
         ()
-      case Failure(e) => log.error("Could not decode binary data: " + Throwables.getStackTraceAsString(e))
+      case Failure(e) => log.error(("Could not decode binary data: " +
+        Throwables.getStackTraceAsString(e) + Pos()).wrap)
     }
   }
 

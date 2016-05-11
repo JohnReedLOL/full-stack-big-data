@@ -39,7 +39,7 @@ class KafkaConsumerApp[T](val topic: String,
   private val executor = Executors.newFixedThreadPool(numStreams)
   private val consumerConnector = Consumer.create(new ConsumerConfig(effectiveConfig))
 
-  logger.info(s"Connecting to topic $topic via ZooKeeper $zookeeperConnect")
+  logger.info((s"Connecting to topic $topic via ZooKeeper $zookeeperConnect" + Pos()).wrap)
 
   def startConsumers(f: (MessageAndMetadata[Array[Byte], Array[Byte]], ConsumerTaskContext, Option[T]) => Unit,
                      startup: (ConsumerTaskContext) => Option[T] = (c: ConsumerTaskContext) => None,
@@ -59,9 +59,9 @@ class KafkaConsumerApp[T](val topic: String,
   }
 
   def shutdown() {
-    logger.debug("Shutting down Kafka consumer connector")
+    logger.debug(("Shutting down Kafka consumer connector" + Pos()).wrap)
     consumerConnector.shutdown()
-    logger.debug("Shutting down thread pool of consumer tasks")
+    logger.debug(("Shutting down thread pool of consumer tasks" + Pos()).wrap)
     executor.shutdown()
   }
 
@@ -85,34 +85,37 @@ class ConsumerTask[K, V, T, C <: ConsumerTaskContext](stream: KafkaStream[K, V],
   @volatile private var shutdownAlreadyRanOnce = false
 
   override def run() {
-    logger.debug(s"Consumer task of thread ${context.threadId} entered run()")
+    logger.debug((s"Consumer task of thread ${context.threadId} entered run()" + Pos()).wrap)
     t = startup(context)
     try {
       stream foreach {
         case msg: MessageAndMetadata[_, _] =>
-          logger.trace(s"Thread ${context.threadId} received message: " + msg)
+          logger.trace((s"Thread ${context.threadId} received message: " + msg + Pos()).wrap)
           f(msg, context, t)
         case _ => logger.trace(s"Received unexpected message type from broker")
       }
       gracefulShutdown()
     }
     catch {
-      case e: InterruptedException => logger.debug(s"Consumer task of thread ${context.threadId} was interrupted")
+      case e: InterruptedException => {
+        logger.debug((s"Consumer task of thread ${context.threadId} was interrupted" + Pos()).wrap)
+      }
     }
   }
 
   def gracefulShutdown() {
     if (!shutdownAlreadyRanOnce) {
-      logger.debug("Performing graceful shutdown")
+      logger.debug(("Performing graceful shutdown" + Pos()).wrap)
       shutdownAlreadyRanOnce = true
       shutdown(context, t)
     }
-    else logger.debug("Graceful shutdown requested but it already ran once, so it will not be run again.")
+    else logger.debug(("Graceful shutdown requested but it already ran once, so it will not be run again." +
+      Pos()).wrap)
   }
 
   Runtime.getRuntime.addShutdownHook(new Thread() {
     override def run() {
-      logger.debug("Shutdown hook triggered!")
+      logger.debug(("Shutdown hook triggered!" + Pos()).wrap)
       gracefulShutdown()
     }
   })

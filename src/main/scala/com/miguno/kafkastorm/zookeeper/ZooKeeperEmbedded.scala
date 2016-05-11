@@ -13,7 +13,7 @@ import scala.trace.{Pos, implicitlyFormatable}
  */
 class ZooKeeperEmbedded(val port: Int = 2181) extends LazyLogging {
 
-  logger.debug(s"Starting embedded ZooKeeper server on port $port..." + Pos())
+  logger.debug((s"Starting embedded ZooKeeper server on port $port..." + Pos()).wrap)
 
   private val server = new TestingServer(port)
 
@@ -21,9 +21,9 @@ class ZooKeeperEmbedded(val port: Int = 2181) extends LazyLogging {
    * Stop the instance.
    */
   def stop() {
-    logger.debug(s"Shutting down embedded ZooKeeper server on port $port...")
+    logger.debug((s"Shutting down embedded ZooKeeper server on port $port..." + Pos()).wrap)
     server.close()
-    logger.debug(s"Shutdown of embedded ZooKeeper server on port $port completed")
+    logger.debug((s"Shutdown of embedded ZooKeeper server on port $port completed" + Pos()).wrap)
   }
 
   /**
