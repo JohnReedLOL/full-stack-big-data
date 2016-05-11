@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="SBT: org.clojure:math.numeric-tower:0.0.1:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.clojure/math.numeric-tower/jars/math.numeric-tower-0.0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.clojure/math.numeric-tower/srcs/math.numeric-tower-0.0.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

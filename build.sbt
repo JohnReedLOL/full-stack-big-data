@@ -27,7 +27,10 @@ val chillVersion = "0.5.1"
 val sparkVersion = "1.1.1"
 val stormVersion = "0.9.6"
 
+resolvers += "johnreed2 bintray" at "http://dl.bintray.com/content/johnreed2/maven"
+
 libraryDependencies ++= Seq(
+  "scala.trace" %% "scala-trace-debug" % "2.2.16",
   "com.twitter" %% "bijection-core" % bijectionVersion,
   "com.twitter" %% "bijection-avro" % bijectionVersion,
   "com.twitter" %% "chill" % chillVersion,
@@ -75,7 +78,7 @@ libraryDependencies ++= Seq(
 
 // Required IntelliJ workaround.  This tells `sbt gen-idea` to include scala-reflect as a compile dependency (and not
 // merely as a test dependency), which we need for TypeTag usage.
-libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _)
+val setting = libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _)
 
 // Enable forking (see sbt docs) because our full build (including tests) uses many threads.
 fork := true

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SBT: hiccup:hiccup:0.3.6:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/hiccup/hiccup/jars/hiccup-0.3.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

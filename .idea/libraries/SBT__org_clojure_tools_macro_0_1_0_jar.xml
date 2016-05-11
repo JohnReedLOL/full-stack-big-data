@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="SBT: org.clojure:tools.macro:0.1.0:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.clojure/tools.macro/jars/tools.macro-0.1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/org.clojure/tools.macro/srcs/tools.macro-0.1.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
