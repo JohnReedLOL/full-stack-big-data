@@ -5,6 +5,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.miguno.avro.Tweet
 import com.twitter.chill.KryoSerializer
 import com.twitter.chill.avro.AvroSerializer
+import scala.trace.{Pos, implicitlyFormatable}
 
 class TweetAvroKryoDecorator extends IKryoDecorator {
   override def decorate(k: Kryo) {

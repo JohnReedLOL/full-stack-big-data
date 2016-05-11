@@ -11,6 +11,7 @@ import com.twitter.bijection.Injection
 import com.twitter.bijection.avro.SpecificAvroCodecs
 import org.apache.avro.specific.SpecificRecordBase
 import org.slf4j.{Logger, LoggerFactory}
+import scala.trace.{Pos, implicitlyFormatable}
 
 /**
  * A Storm->Kafka writer bolt.

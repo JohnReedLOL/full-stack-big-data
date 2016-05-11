@@ -2,6 +2,7 @@ package com.miguno.kafkastorm.zookeeper
 
 import com.miguno.kafkastorm.logging.LazyLogging
 import org.apache.curator.test.TestingServer
+import scala.trace.{Pos, implicitlyFormatable}
 
 /**
  * Runs an in-memory, "embedded" instance of a ZooKeeper server.
@@ -12,7 +13,7 @@ import org.apache.curator.test.TestingServer
  */
 class ZooKeeperEmbedded(val port: Int = 2181) extends LazyLogging {
 
-  logger.debug(s"Starting embedded ZooKeeper server on port $port...")
+  logger.debug(s"Starting embedded ZooKeeper server on port $port..." + Pos())
 
   private val server = new TestingServer(port)
 

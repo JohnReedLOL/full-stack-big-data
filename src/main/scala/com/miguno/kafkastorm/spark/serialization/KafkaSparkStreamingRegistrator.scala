@@ -5,6 +5,7 @@ import com.miguno.avro.Tweet
 import com.twitter.chill.avro.AvroSerializer
 import org.apache.avro.generic.GenericRecord
 import org.apache.spark.serializer.KryoRegistrator
+import scala.trace.{Pos, implicitlyFormatable}
 
 /**
  * We register custom classes with Kryo, see the explanations in the

@@ -1,6 +1,7 @@
 package com.miguno.kafkastorm.logging
 
 import org.slf4j.{Logger, LoggerFactory}
+import scala.trace.{Pos, implicitlyFormatable}
 
 trait LazyLogging {
 

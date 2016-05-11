@@ -9,8 +9,8 @@ import kafka.server.{KafkaConfig, KafkaServerStartable}
 import kafka.utils.ZKStringSerializer
 import org.I0Itec.zkclient.ZkClient
 import org.apache.commons.io.FileUtils
-
 import scala.concurrent.duration._
+import scala.trace.{Pos, implicitlyFormatable}
 
 /**
  * Runs an in-memory, "embedded" instance of a Kafka broker, which listens at `127.0.0.1:9092` by default.

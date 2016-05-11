@@ -2,8 +2,8 @@ package com.miguno.kafkastorm.storm.utils
 
 import backtype.storm.generated.StormTopology
 import backtype.storm.{Config, LocalCluster, StormSubmitter}
-
 import scala.concurrent.duration._
+import scala.trace.{Pos, implicitlyFormatable}
 
 /**
  * Provides convenience functions to run Storm topologies locally and remotely (i.e. in a "real" Storm cluster).

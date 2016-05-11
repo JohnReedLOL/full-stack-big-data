@@ -11,8 +11,8 @@ import kafka.admin.AdminUtils
 import kafka.utils.ZKStringSerializer
 import org.I0Itec.zkclient.ZkClient
 import storm.kafka.{KafkaSpout, SpoutConfig, ZkHosts}
-
 import scala.concurrent.duration._
+import scala.trace.{Pos, implicitlyFormatable}
 
 /**
  * Showcases how to create a Storm topology that reads data from Kafka.  Because it's a demo this topology does not

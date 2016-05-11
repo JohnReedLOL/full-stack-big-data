@@ -7,6 +7,7 @@ import com.miguno.kafkastorm.logging.LazyLogging
 import kafka.consumer.{Consumer, ConsumerConfig, KafkaStream}
 import kafka.message.MessageAndMetadata
 import kafka.serializer.DefaultDecoder
+import scala.trace.{Pos, implicitlyFormatable}
 
 /**
  * Demonstrates how to implement a simple Kafka consumer application to read data from Kafka.

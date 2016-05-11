@@ -1,8 +1,8 @@
 package com.miguno.kafkastorm.kafka
 
 import java.util.Properties
-
 import kafka.producer.{KeyedMessage, Producer, ProducerConfig}
+import scala.trace.{Pos, implicitlyFormatable}
 
 /**
  * Demonstrates how to implement a simple Kafka producer application to send data to Kafka.
