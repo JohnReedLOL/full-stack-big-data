@@ -24,9 +24,9 @@ input: String, output: (timestamp, Int), where Int is a wordcount
  
  |text1 |  
  
- |      |  
+ |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|  
  
- |      |  
+ |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|  
  
  ________  
  
