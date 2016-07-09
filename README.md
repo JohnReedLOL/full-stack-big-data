@@ -56,11 +56,11 @@ The user can then compare the counts produced by the different layers.
 /* This sends startTime and endTime to the time interval query, getting the counts for that time interval */  
 - get  /home/time/start="1:10:2"&end="1:10:5"     
 
-###### Environment:
+#### Environment:
 
 Assumes the user has set up an environment with all the tools availiable. I will be using a compressed (tar.bz) 6Gb virtualbox disk image that can be downloaded pre-installed with all the tools necessary to run. The intent is to use the exact same disk image used to write and develop the seed as the user gets to run the seed.
 
-###### Instructions (not yet available):
+#### Instructions (not yet available):
 
 Download virtualbox disk image
 
@@ -70,7 +70,7 @@ Open IntelliJ
 
 Run
 
-###### Compilation (not yet available):
+#### Compilation (not yet available):
 
 Project is broken up into seperately compilable compilation units. Each component is its own compilation unit with two "super units" - ingestion and processing. Ideas for compilation units include web server compilation unit [handles requests], reactive kafka compilation unit [handles relaying], and batch processing compilation unit. 
 
@@ -80,7 +80,7 @@ According to the book "Mythical Man Month", teams tend to split according to the
 
 —FREDERICK P. BROOKS, JR., The Mythical Man-Month
 
-###### Tenents
+#### Tenents
 
 - "lightweight" - minimize and remove unnecessary extra stuff
 - "distributed" - seperate pieces which talk to each other can survive if another piece dies.
