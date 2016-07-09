@@ -21,10 +21,15 @@ input: String, output: (timestamp, Int), where Int is a wordcount
 ##### Gui:
 
  ________  
+ 
  |text1 |  
+ 
  |      |  
+ 
  |      |  
+ 
  ________  
+ 
 ^ Submit ^
 
 A simple text box with a submit button. Clicking "Submit" brings the user to a query menu.
