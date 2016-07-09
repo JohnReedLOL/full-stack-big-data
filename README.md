@@ -12,13 +12,20 @@
 
 The purpose of this project is to provide a simple seed with all the library support necessary to build a big data application from scratch.
 
+#### Architectural Tenents
+
+- "lightweight" - minimize and remove unnecessary extra stuff
+- "distributed" - seperate pieces which talk to each other can survive if another piece dies.
+- "open source" - should be possible to have community of sites like [Scala Reddit](https://www.reddit.com/r/scala/) and Stack Overflow look at code, report problems or vulnerabilities. 
+- "real time" - should be able to provide immediate results in addition to batch.
+
 #### Architecture:
 
-##### Data model:
+##### Data-centric view:
 
 input: String, output: (timestamp, Int), where Int is a wordcount
 
-##### GUI:
+##### GUI-centric view:
 
  ________  
 | Input Text    |
@@ -42,7 +49,7 @@ Count from batch layer: Z
 
 The user can then compare the counts produced by the different layers.
 
-##### URL schema
+##### URL-centric view:
 
 /* This gets the page with the text box */  
 - get  /home    
@@ -79,10 +86,3 @@ According to the book "Mythical Man Month", teams tend to split according to the
 "The morale effects are startling. Enthusiasm jumps when there is a running system, even a simple one. Efforts redouble when the first picture from a new graphics software system appears on the screen, even if it is only a rectangle. One always has, at every stage in the process, a working system. I find that teams can grow much more complex entities in four months than they can build."
 
 —FREDERICK P. BROOKS, JR., The Mythical Man-Month
-
-#### Tenents
-
-- "lightweight" - minimize and remove unnecessary extra stuff
-- "distributed" - seperate pieces which talk to each other can survive if another piece dies.
-- "open source" - should be possible to have community of sites like [Scala Reddit](https://www.reddit.com/r/scala/) and Stack Overflow look at code, report problems or vulnerabilities. 
-- "real time" - should be able to provide immediate results in addition to batch.
