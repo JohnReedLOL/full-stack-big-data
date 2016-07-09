@@ -69,3 +69,16 @@ Open in virtualbox
 Open IntelliJ
 
 Run
+
+##### Compilation (not yet available):
+
+Project is broken up into seperately compilable compilation units. Each component is its own compilation unit with two "super units" - ingestion and processing. Ideas for compilation units include web server compilation unit [handles requests], reactive kafka compilation unit [handles relaying], and batch processing compilation unit. Perhaps web server and relays can be "ingestion super unit" and batch processing and maybe real time processing can be "processing super unit". According to the book "Mythical Man Month", teams tend to split according to the boundaries of the architecture, so teams can be split into two super units and maybe into sub units based on component.
+
+In the end I hope to have a full blown end to end stack that can be adapted to a variety of different possible use cases ranging from file drop to real time analytics.
+
+Product should be:
+
+- "lightweight" - minimize and remove unnecessary extra stuff
+- "distributed" - seperate pieces which talk to each other can can survive if another piece dies.
+- "open source" - should be possible to have community of sites like [Scala Reddit](https://www.reddit.com/r/scala/) and Stack Overflow look at code, report problems or vulnerabilities. 
+- "real time" - should be able to provide immediate results in addition to batch.
