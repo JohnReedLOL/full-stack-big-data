@@ -74,11 +74,13 @@ Run
 
 Project is broken up into seperately compilable compilation units. Each component is its own compilation unit with two "super units" - ingestion and processing. Ideas for compilation units include web server compilation unit [handles requests], reactive kafka compilation unit [handles relaying], and batch processing compilation unit. 
 
-According to the book "Mythical Man Month", teams tend to split according to the boundaries of the architecture, so teams can naturally divvy up based on independent components that work together. It is a custom in some software companies like Valve for groups to naturally form around seperate projects.
+According to the book "Mythical Man Month", teams tend to split according to the boundaries of the architecture, so teams can naturally divvy up based on independent components that they work on.
 
-"Brooks advocates "growing" software organically through incremental development. He suggests devising and implementing the main and subprograms right at the beginning, filling in the working sub-sections later. He believes that programming this way excites the engineers and provides a working system at every stage of development."
+"The morale effects are startling. Enthusiasm jumps when there is a running system, even a simple one. Efforts redouble when the first picture from a new graphics software system appears on the screen, even if it is only a rectangle. One always has, at every stage in the process, a working system. I find that teams can grow much more complex entities in four months than they can build."
 
-^ This is what the seed should be for. Growing into a software product.
+—FREDERICK P. BROOKS, JR., The Mythical Man-Month
+
+##### Tenents
 
 - "lightweight" - minimize and remove unnecessary extra stuff
 - "distributed" - seperate pieces which talk to each other can can survive if another piece dies.
