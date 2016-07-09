@@ -68,20 +68,6 @@ The user can then compare the counts produced by the different layers.
 /* This sends startTime and endTime to the time interval query, getting the counts for that time interval */  
 - get  /home/time/start="1:10:2"&end="1:10:5"     
 
-#### Environment:
-
-I, JohnReedLOL, do not know how to set up Vagrant. I will be using a compressed (tar.bz) virtualbox disk image.
-
-#### Instructions (not yet available):
-
-Download virtualbox disk image
-
-Open in virtualbox
-
-Open IntelliJ
-
-Run
-
 #### Compilation (not yet available):
 
 Project is broken up into seperately compilable compilation units. Each component is its own compilation unit with two "super units" - ingestion and processing. Ideas for compilation units include web server compilation unit [handles requests], reactive kafka compilation unit [handles relaying], and batch processing compilation unit. 
