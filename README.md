@@ -1,5 +1,5 @@
 # full-stack-big-data
-Full stack big data demo with Play Framework, Akka, Akka Streaming, HDFS, batch layer, and couchDB for querying. 
+Full stack big data demo with Play Framework, Akka, Kafka, Akka Streaming, HDFS, batch layer, and couchDB for querying. 
 
 Provides simple real time and batch word count. 
 
