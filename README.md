@@ -60,7 +60,7 @@ The user can then compare the counts produced by the different layers.
 
 Assumes the user has set up an environment with all the tools availiable. I will be using a compressed (tar.bz) 6Gb virtualbox disk image that can be downloaded pre-installed with all the tools necessary to run. The intent is to use the exact same disk image used to write and develop the seed as the user gets to run the seed.
 
-##### Instructions:
+##### Instructions (not yet available):
 
 Download virtualbox disk image
 
