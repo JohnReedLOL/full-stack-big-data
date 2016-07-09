@@ -20,20 +20,12 @@ input: String, output: (timestamp, Int), where Int is a wordcount
 
 ##### Gui:
 
+ ________  
 | Input Text    |
 | ------------- |
 | text          |
 | ...           |
 | ...           |
-
- ________  
- 
- |text1 |  
- 
- |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|  
- 
- |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|  
- 
  ________  
  
 ^ Submit ^
