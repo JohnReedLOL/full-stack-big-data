@@ -10,7 +10,12 @@
 
 #### Purpose:
 
-The purpose of this project is to provide a simple seed with all the library support necessary to build a big data application from scratch.
+"The morale effects are startling. Enthusiasm jumps when there is a running system, even a simple one. Efforts redouble when the first picture from a new graphics software system appears on the screen, even if it is only a rectangle. One always has, at every stage in the process, a working system. I find that teams can grow much more complex entities in four months than they can build."
+
+—FREDERICK P. BROOKS, JR., The Mythical Man-Month
+
+- Minimum viable working app
+- Leaves plenty of space for "filling in the working sub-sections later"
 
 #### Architectural Tenents
 
@@ -65,7 +70,7 @@ The user can then compare the counts produced by the different layers.
 
 #### Environment:
 
-Assumes the user has set up an environment with all the tools availiable. I will be using a compressed (tar.bz) 6Gb virtualbox disk image that can be downloaded pre-installed with all the tools necessary to run. The intent is to use the exact same disk image used to write and develop the seed as the user gets to run the seed.
+I, JohnReedLOL, do not know how to set up Vagrant. I will be using a compressed (tar.bz) virtualbox disk image.
 
 #### Instructions (not yet available):
 
@@ -82,7 +87,3 @@ Run
 Project is broken up into seperately compilable compilation units. Each component is its own compilation unit with two "super units" - ingestion and processing. Ideas for compilation units include web server compilation unit [handles requests], reactive kafka compilation unit [handles relaying], and batch processing compilation unit. 
 
 According to the book "Mythical Man Month", teams tend to split according to the boundaries of the architecture, so teams can naturally divvy up based on independent components that they work on.
-
-"The morale effects are startling. Enthusiasm jumps when there is a running system, even a simple one. Efforts redouble when the first picture from a new graphics software system appears on the screen, even if it is only a rectangle. One always has, at every stage in the process, a working system. I find that teams can grow much more complex entities in four months than they can build."
-
-—FREDERICK P. BROOKS, JR., The Mythical Man-Month
