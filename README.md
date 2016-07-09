@@ -18,7 +18,7 @@ The purpose of this project is to provide a simple seed with all the library sup
 
 input: String, output: (timestamp, Int), where Int is a wordcount
 
-##### Gui:
+##### GUI:
 
  ________  
 | Input Text    |
@@ -72,11 +72,13 @@ Run
 
 ##### Compilation (not yet available):
 
-Project is broken up into seperately compilable compilation units. Each component is its own compilation unit with two "super units" - ingestion and processing. Ideas for compilation units include web server compilation unit [handles requests], reactive kafka compilation unit [handles relaying], and batch processing compilation unit. Perhaps web server and relays can be "ingestion super unit" and batch processing and maybe real time processing can be "processing super unit". According to the book "Mythical Man Month", teams tend to split according to the boundaries of the architecture, so teams can be split into two super units and maybe into sub units based on component.
+Project is broken up into seperately compilable compilation units. Each component is its own compilation unit with two "super units" - ingestion and processing. Ideas for compilation units include web server compilation unit [handles requests], reactive kafka compilation unit [handles relaying], and batch processing compilation unit. 
 
-In the end I hope to have a full blown end to end stack that can be adapted to a variety of different possible use cases ranging from file drop to real time analytics.
+According to the book "Mythical Man Month", teams tend to split according to the boundaries of the architecture, so teams can naturally divvy up based on independent components that work together. It is a custom in some software companies like Valve for groups to naturally form around seperate projects.
 
-Product should be:
+"Brooks advocates "growing" software organically through incremental development. He suggests devising and implementing the main and subprograms right at the beginning, filling in the working sub-sections later. He believes that programming this way excites the engineers and provides a working system at every stage of development."
+
+^ This is what the seed should be for. Growing into a software product.
 
 - "lightweight" - minimize and remove unnecessary extra stuff
 - "distributed" - seperate pieces which talk to each other can can survive if another piece dies.
