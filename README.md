@@ -55,3 +55,17 @@ The user can then compare the counts produced by the different layers.
 
 /* This sends startTime and endTime to the time interval query, getting the counts for that time interval */  
 - get  /home/time/start="1:10:2"&end="1:10:5"     
+
+##### Environment:
+
+Assumes the user has set up an environment with all the tools availiable. I will be using a compressed (tar.bz) 6Gb virtualbox disk image that can be downloaded pre-installed with all the tools necessary to run. The intent is to use the exact same disk image used to write and develop the seed as the user gets to run the seed.
+
+##### Instructions:
+
+Download virtualbox disk image
+
+Open in virtualbox
+
+Open IntelliJ
+
+Run
