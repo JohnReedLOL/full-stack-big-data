@@ -1,0 +1,105 @@
+<?xml version="1.0"?>
+<!--
+  The `PatternLayout` documentation of logback explains how you can customize the encoder patterns below.
+  See http://logback.qos.ch/manual/layouts.html#ClassicPatternLayout
+-->
+<configuration scan="true" scanPeriod="60 seconds">
+ <appender name="A1" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} %c [%p] %m%n</pattern>
+    </encoder>
+ </appender>
+
+ <appender name="ACCESS" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} %c [%p] %m%n</pattern>
+    </encoder>
+  </appender>
+
+  <!--
+    Note:  There is a known bug in Storm versions <= 0.9.1 where tweaking logback settings may trigger runtime
+    exceptions.  See https://www.mail-archive.com/user@storm.incubator.apache.org/msg01907.html
+  -->
+  <root level="ERROR">
+    <appender-ref ref="A1"/>
+  </root>
+
+  <logger name="com.miguno.kafkastorm.storm.bolts.AvroDecoderBolt" additivity="false">
+    <level value="OFF" />
+    <appender-ref ref="ACCESS" />
+  </logger>
+
+  <logger name="com.miguno.kafkastorm.storm.bolts.AvroKafkaSinkBolt" additivity="false">
+    <level value="OFF" />
+    <appender-ref ref="ACCESS" />
+  </logger>
+
+  <logger name="backtype.storm.security.auth.authorizer" additivity="false">
+    <level value="ERROR" />
+    <appender-ref ref="ACCESS" />
+  </logger>
+
+  <logger name="backtype.storm.metric.LoggingMetricsConsumer" additivity="false" >
+    <level value="ERROR"/>
+    <appender-ref ref="ACCESS"/>
+  </logger>
+
+  <!-- Jetty (used by Spark) is very chatty -->
+  <logger name="org.eclipse.jetty" additivity="false" >
+    <level value="ERROR"/>
+    <appender-ref ref="ACCESS"/>
+  </logger>
+
+  <!--
+    Squelch CuratorFrameworkImpl to prevent the following error messages from polluting our test output:
+
+        # Note: This is due to a CONNECTION LOSS.
+        2014-09-16 13:53:11 o.a.c.f.i.CuratorFrameworkImpl [ERROR] Background operation retry gave up
+        org.apache.zookeeper.KeeperException$ConnectionLossException: KeeperErrorCode = ConnectionLoss
+          at org.apache.zookeeper.KeeperException.create(KeeperException.java:99) ~[zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.curator.framework.imps.CuratorFrameworkImpl.checkBackgroundRetry(CuratorFrameworkImpl.java:666) [curator-framework-2.4.0.jar:na]
+          at org.apache.curator.framework.imps.CuratorFrameworkImpl.processBackgroundOperation(CuratorFrameworkImpl.java:479) [curator-framework-2.4.0.jar:na]
+          at org.apache.curator.framework.imps.BackgroundSyncImpl$1.processResult(BackgroundSyncImpl.java:50) [curator-framework-2.4.0.jar:na]
+          at org.apache.zookeeper.ClientCnxn$EventThread.processEvent(ClientCnxn.java:606) [zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.zookeeper.ClientCnxn$EventThread.run(ClientCnxn.java:495) [zookeeper-3.4.5.jar:3.4.5-1392090]
+
+        # Note: This is due to a SESSION EXPIRATION.
+        2014-09-16 13:53:12 o.a.c.f.i.CuratorFrameworkImpl [ERROR] Background operation retry gave up
+        org.apache.zookeeper.KeeperException$SessionExpiredException: KeeperErrorCode = Session expired
+          at org.apache.zookeeper.KeeperException.create(KeeperException.java:127) ~[zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.curator.framework.imps.CuratorFrameworkImpl.checkBackgroundRetry(CuratorFrameworkImpl.java:666) [curator-framework-2.4.0.jar:na]
+          at org.apache.curator.framework.imps.CuratorFrameworkImpl.processBackgroundOperation(CuratorFrameworkImpl.java:479) [curator-framework-2.4.0.jar:na]
+          at org.apache.curator.framework.imps.BackgroundSyncImpl$1.processResult(BackgroundSyncImpl.java:50) [curator-framework-2.4.0.jar:na]
+          at org.apache.zookeeper.ClientCnxn$EventThread.processEvent(ClientCnxn.java:606) [zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.zookeeper.ClientCnxn$EventThread.queuePacket(ClientCnxn.java:475) [zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.zookeeper.ClientCnxn.finishPacket(ClientCnxn.java:627) [zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.zookeeper.ClientCnxn.conLossPacket(ClientCnxn.java:645) [zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.zookeeper.ClientCnxn.access$2400(ClientCnxn.java:85) [zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.zookeeper.ClientCnxn$SendThread.cleanup(ClientCnxn.java:1160) [zookeeper-3.4.5.jar:3.4.5-1392090]
+          at org.apache.zookeeper.ClientCnxn$SendThread.run(ClientCnxn.java:1097) [zookeeper-3.4.5.jar:3.4.5-1392090]
+
+    These messages may be logged (directly or indirectly) because of ZK timeouts in storm-kafka, i.e. Storm's built-in
+    KafkaSpout we are using to read Kafka data into our Storm topologies.  It is unclear whether we can prevent those
+    messages in the first place as we are not certain yet what causes them.
+  -->
+  <logger name="org.apache.curator.framework.imps.CuratorFrameworkImpl" additivity="false" >
+    <level value="OFF"/>
+    <appender-ref ref="ACCESS"/>
+  </logger>
+
+  <!--
+    Squelch NIOServerCnxnFactory from reporting SparkException's, which are expected during the shutdown phase of our
+    Spark Streaming examples:
+
+        org.apache.spark.SparkException: Job cancelled because SparkContext was shut down
+  -->
+  <logger name="org.apache.zookeeper.server.NIOServerCnxnFactory" additivity="false" >
+    <level value="OFF"/>
+    <appender-ref ref="ACCESS"/>
+  </logger>
+  <logger name="org.apache.storm.zookeeper.server.NIOServerCnxnFactory" additivity="false" >
+    <level value="OFF"/>
+    <appender-ref ref="ACCESS"/>
+  </logger>
+
+</configuration>

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SBT: clout:clout:1.0.1:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/clout/clout/jars/clout-1.0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

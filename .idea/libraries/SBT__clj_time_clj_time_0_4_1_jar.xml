@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="SBT: clj-time:clj-time:0.4.1:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/clj-time/clj-time/jars/clj-time-0.4.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

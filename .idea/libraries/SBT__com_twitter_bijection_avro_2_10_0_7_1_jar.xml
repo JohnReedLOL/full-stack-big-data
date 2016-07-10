@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="SBT: com.twitter:bijection-avro_2.10:0.7.1:jar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/com.twitter/bijection-avro_2.10/bundles/bijection-avro_2.10-0.7.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ivy2/cache/com.twitter/bijection-avro_2.10/srcs/bijection-avro_2.10-0.7.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
