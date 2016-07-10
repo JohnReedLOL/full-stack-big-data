@@ -14,8 +14,8 @@ class KafkaProducerAppSpec extends FunSpec with Matchers with GivenWhenThen with
   private val AnyBrokerList = "a:9092,b:9093"
   private val AnyConfigParam = "queue.buffering.max.ms"
   private val AnyConfigValue = "12345"
-  private val AnyKey = Array[Byte]()
-  private val AnyValue = Array[Byte]()
+  private val AnyKey: Array[Byte] = Array[Byte]()
+  private val AnyValue: Array[Byte] = Array[Byte]()
 
   describe("A KafkaProducerApp") {
 
@@ -23,7 +23,7 @@ class KafkaProducerAppSpec extends FunSpec with Matchers with GivenWhenThen with
       Given("no app")
 
       When("I create an app with the broker list set to " + AnyBrokerList)
-      val producerApp = new KafkaProducerApp(AnyBrokerList, defaultTopic = Option(AnyTopic))
+      val producerApp: KafkaProducerApp = new KafkaProducerApp(AnyBrokerList, defaultTopic = Option(AnyTopic))
 
       Then("the Kafka producer's metadata.broker.list config parameter should be set to this value")
       producerApp.config.props.getString("metadata.broker.list") should be(AnyBrokerList)
@@ -33,13 +33,13 @@ class KafkaProducerAppSpec extends FunSpec with Matchers with GivenWhenThen with
       Given("no app")
 
       When("I create an app with a producer config that sets the broker list to notMe:1234")
-      val config = {
-        val c = new Properties
+      val config: Properties = {
+        val c: Properties = new Properties
         c.put("metadata.broker.list", "notMe:1234")
         c
       }
       And("with the constructor parameter that sets the broker list to " + AnyBrokerList)
-      val producerApp = new KafkaProducerApp(AnyBrokerList, config, defaultTopic = Option(AnyTopic))
+      val producerApp: KafkaProducerApp = new KafkaProducerApp(AnyBrokerList, config, defaultTopic = Option(AnyTopic))
 
       Then("the Kafka producer's actual broker list should be " + AnyBrokerList)
       producerApp.config.props.getString("metadata.broker.list") should be(AnyBrokerList)
@@ -49,12 +49,12 @@ class KafkaProducerAppSpec extends FunSpec with Matchers with GivenWhenThen with
       Given("no app")
 
       When(s"I create an app with a producer config that sets $AnyConfigParam to $AnyConfigValue")
-      val config = {
-        val c = new Properties
+      val config: Properties = {
+        val c: Properties = new Properties
         c.put(AnyConfigParam, AnyConfigValue)
         c
       }
-      val producerApp = new KafkaProducerApp(AnyBrokerList, config, Option(AnyTopic))
+      val producerApp: KafkaProducerApp = new KafkaProducerApp(AnyBrokerList, config, Option(AnyTopic))
 
       Then(s"the Kafka producer's $AnyConfigParam parameter should be to set to $AnyConfigValue")
       producerApp.config.props.getString(AnyConfigParam) should be(AnyConfigValue)
@@ -62,17 +62,17 @@ class KafkaProducerAppSpec extends FunSpec with Matchers with GivenWhenThen with
 
     it("should send to the default topic if no specific topic is requested") {
       Given("a default topic")
-      val defaultTopic = AnyTopic
+      val defaultTopic: String = AnyTopic
       And("an app that is configured with this default topic")
-      val producer = mock[Producer[Array[Byte], Array[Byte]]]
-      val producerApp = spy(new KafkaProducerApp(AnyBrokerList, defaultTopic = Option(defaultTopic),
+      val producer: Producer[Array[Byte], Array[Byte]] = mock[Producer[Array[Byte], Array[Byte]]]
+      val producerApp: KafkaProducerApp = spy(new KafkaProducerApp(AnyBrokerList, defaultTopic = Option(defaultTopic),
         producer = Option(producer)))
 
       When("I send a message to Kafka without specifying a particular topic")
       producerApp.send(AnyKey, AnyValue)
 
       Then("the message should be sent to the default topic")
-      val msg = new KeyedMessage(defaultTopic, AnyKey, AnyValue)
+      val msg: KeyedMessage[Array[Byte], Array[Byte]] = new KeyedMessage(defaultTopic, AnyKey, AnyValue)
       verify(producer).send(msg)
     }
 

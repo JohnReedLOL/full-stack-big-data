@@ -25,35 +25,35 @@ import scala.trace.{Pos, implicitlyFormatable}
 class KafkaEmbedded(config: Properties = new Properties) extends LazyLogging {
 
   private val defaultZkConnect = "127.0.0.1:2181"
-  private val logDir = {
-    val random = (new scala.util.Random).nextInt()
-    val path = Seq(System.getProperty("java.io.tmpdir"), "kafka-test", "logs-" + random).mkString(File.separator)
+  private val logDir: File = {
+    val random: Int = (new scala.util.Random).nextInt()
+    val path: String = Seq(System.getProperty("java.io.tmpdir"), "kafka-test", "logs-" + random).mkString(File.separator)
     new File(path)
   }
 
-  private val effectiveConfig = {
-    val c = new Properties
+  private val effectiveConfig: Properties = {
+    val c: Properties = new Properties
     c.load(this.getClass.getResourceAsStream("/broker-defaults.properties"))
     c.putAll(config)
     c.setProperty("log.dirs", logDir.getAbsolutePath)
     c
   }
 
-  private val kafkaConfig = new KafkaConfig(effectiveConfig)
-  private val kafka = new KafkaServerStartable(kafkaConfig)
+  private val kafkaConfig: KafkaConfig = new KafkaConfig(effectiveConfig)
+  private val kafka: KafkaServerStartable = new KafkaServerStartable(kafkaConfig)
 
   /**
    * This broker's `metadata.broker.list` value.  Example: `127.0.0.1:9092`.
    *
    * You can use this to tell Kafka producers and consumers how to connect to this instance.
    */
-  val brokerList = kafka.serverConfig.hostName + ":" + kafka.serverConfig.port
+  val brokerList: String = kafka.serverConfig.hostName + ":" + kafka.serverConfig.port
 
   /**
    * The ZooKeeper connection string aka `zookeeper.connect`.
    */
-  val zookeeperConnect = {
-    val zkConnectLookup = Option(effectiveConfig.getProperty("zookeeper.connect"))
+  val zookeeperConnect: String = {
+    val zkConnectLookup: Option[String] = Option(effectiveConfig.getProperty("zookeeper.connect"))
     zkConnectLookup match {
       case Some(zkConnect) => zkConnect
       case _ =>
@@ -90,12 +90,12 @@ class KafkaEmbedded(config: Properties = new Properties) extends LazyLogging {
     logger.debug(
       (s"Creating topic { name: $topic, partitions: $partitions, replicationFactor: $replicationFactor, config: $config }" +
         Pos()).wrap)
-    val sessionTimeout = 10.seconds
-    val connectionTimeout = 8.seconds
+    val sessionTimeout: FiniteDuration = 10.seconds
+    val connectionTimeout: FiniteDuration = 8.seconds
     // Note: You must initialize the ZkClient with ZKStringSerializer.  If you don't, then createTopic() will only
     // seem to work (it will return without error).  Topic will exist in only ZooKeeper, and will be returned when
     // listing topics, but Kafka itself does not create the topic.
-    val zkClient = new ZkClient(zookeeperConnect, sessionTimeout.toMillis.toInt, connectionTimeout.toMillis.toInt,
+    val zkClient: ZkClient = new ZkClient(zookeeperConnect, sessionTimeout.toMillis.toInt, connectionTimeout.toMillis.toInt,
       ZKStringSerializer)
     AdminUtils.createTopic(zkClient, topic, partitions, replicationFactor, config)
     zkClient.close()

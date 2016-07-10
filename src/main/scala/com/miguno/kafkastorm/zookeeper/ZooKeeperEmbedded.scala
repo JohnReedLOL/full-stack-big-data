@@ -15,7 +15,7 @@ class ZooKeeperEmbedded(val port: Int = 2181) extends LazyLogging {
 
   logger.debug((s"Starting embedded ZooKeeper server on port $port..." + Pos()).wrap)
 
-  private val server = new TestingServer(port)
+  private val server: TestingServer = new TestingServer(port)
 
   /**
    * Stop the instance.

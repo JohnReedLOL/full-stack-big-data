@@ -1,5 +1,6 @@
 package com.miguno.kafkastorm.integration
 
+import backtype.storm.generated.StormTopology
 import backtype.storm.testing._
 import backtype.storm.topology.TopologyBuilder
 import backtype.storm.tuple.{Fields, Values}
@@ -19,10 +20,10 @@ class StormSpec extends FunSpec with Matchers with BeforeAndAfterAll with GivenW
       Given("no cluster")
 
       When("I start a LocalCluster instance")
-      val mkClusterParam = new MkClusterParam
+      val mkClusterParam: MkClusterParam = new MkClusterParam
       mkClusterParam.setSupervisors(2)
       mkClusterParam.setPortsPerSupervisor(2)
-      val daemonConf = new Config
+      val daemonConf: Config = new Config
       daemonConf.put(Config.SUPERVISOR_ENABLE, false: java.lang.Boolean)
       daemonConf.put(Config.TOPOLOGY_ACKER_EXECUTORS, 0: Integer)
       mkClusterParam.setDaemonConf(daemonConf)
@@ -42,14 +43,14 @@ class StormSpec extends FunSpec with Matchers with BeforeAndAfterAll with GivenW
     it("should run a basic topology", IntegrationTest) {
       Given("a local cluster")
       And("a wordcount topology")
-      val mkClusterParam = new MkClusterParam
+      val mkClusterParam: MkClusterParam = new MkClusterParam
       mkClusterParam.setSupervisors(4)
-      val daemonConf = new Config
+      val daemonConf: Config = new Config
       daemonConf.put(Config.STORM_LOCAL_MODE_ZMQ, false: java.lang.Boolean)
       mkClusterParam.setDaemonConf(daemonConf)
 
       // Base topology setup
-      val builder = new TopologyBuilder
+      val builder: TopologyBuilder = new TopologyBuilder
       val spoutId = "wordSpout"
       builder.setSpout(spoutId, new TestWordSpout(true), 3)
       val wordCounterId = "wordCounterBolt"
@@ -58,16 +59,16 @@ class StormSpec extends FunSpec with Matchers with BeforeAndAfterAll with GivenW
       builder.setBolt(globalCountId, new TestGlobalCount).globalGrouping(spoutId)
       val aggregatesCounterId = "aggregatesCounterBolt"
       builder.setBolt(aggregatesCounterId, new TestAggregatesCounter).globalGrouping(wordCounterId)
-      val topology = builder.createTopology()
-      val completeTopologyParam = new CompleteTopologyParam
+      val topology: StormTopology = builder.createTopology()
+      val completeTopologyParam: CompleteTopologyParam = new CompleteTopologyParam
 
       And("the input words alice, bob, joe, alice")
-      val mockedSources = new MockedSources()
+      val mockedSources: MockedSources = new MockedSources()
       mockedSources.addMockData(spoutId, new Values("alice"), new Values("bob"), new Values("joe"), new Values("alice"))
       completeTopologyParam.setMockedSources(mockedSources)
 
       // Finalize topology config
-      val conf = new Config
+      val conf: Config = new Config
       conf.setNumWorkers(2)
       completeTopologyParam.setStormConf(conf)
 
@@ -86,10 +87,10 @@ class StormSpec extends FunSpec with Matchers with BeforeAndAfterAll with GivenW
       // below.  Left as an exercise for the reader. :-)
       Then("the topology should properly count the words")
       // Type ascription required for Scala-Java interoperability.
-      val one = 1: Integer
-      val two = 2: Integer
-      val three = 3: Integer
-      val four = 4: Integer
+      val one: Integer = 1: Integer
+      val two: Integer = 2: Integer
+      val three: Integer = 3: Integer
+      val four: Integer = 4: Integer
 
       // Verify the expected behavior for each of the components (spout + bolts) in the topology by comparing
       // their actual output tuples vs. the corresponding expected output tuples.

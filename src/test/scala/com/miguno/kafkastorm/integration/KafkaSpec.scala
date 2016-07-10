@@ -4,7 +4,7 @@ import java.util.Properties
 
 import _root_.kafka.message.MessageAndMetadata
 import com.miguno.avro.Tweet
-import com.miguno.kafkastorm.kafka.ConsumerTaskContext
+import com.miguno.kafkastorm.kafka.{ConsumerTaskContext, KafkaProducerApp}
 import com.miguno.kafkastorm.logging.LazyLogging
 import com.miguno.kafkastorm.testing.{EmbeddedKafkaZooKeeperCluster, KafkaTopic}
 import com.twitter.bijection.Injection
@@ -14,14 +14,15 @@ import org.scalatest._
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.language.reflectiveCalls
+import scala.util.Try
 
 @DoNotDiscover
 class KafkaSpec extends FunSpec with Matchers with BeforeAndAfterEach with GivenWhenThen with LazyLogging {
 
-  implicit val specificAvroBinaryInjectionForTweet = SpecificAvroCodecs.toBinary[Tweet]
+  implicit val specificAvroBinaryInjectionForTweet: Injection[Tweet, Array[Byte]] = SpecificAvroCodecs.toBinary[Tweet]
 
-  private val topic = KafkaTopic("testing")
-  private val kafkaZkCluster = new EmbeddedKafkaZooKeeperCluster(topics = Seq(topic))
+  private val topic: KafkaTopic = KafkaTopic("testing")
+  private val kafkaZkCluster: EmbeddedKafkaZooKeeperCluster = new EmbeddedKafkaZooKeeperCluster(topics = Seq(topic))
 
   override def beforeEach() {
     kafkaZkCluster.start()
@@ -31,17 +32,17 @@ class KafkaSpec extends FunSpec with Matchers with BeforeAndAfterEach with Given
     kafkaZkCluster.stop()
   }
 
-  val fixture = {
-    val BeginningOfEpoch = 0.seconds
-    val AnyTimestamp = 1234.seconds
-    val now = System.currentTimeMillis().millis
+  val fixture: Object {val messages: Seq[Tweet]; val t1: Tweet; val t3: Tweet; val t2: Tweet} = {
+    val BeginningOfEpoch: FiniteDuration = 0.seconds
+    val AnyTimestamp: FiniteDuration = 1234.seconds
+    val now: FiniteDuration = System.currentTimeMillis().millis
 
     new {
-      val t1 = new Tweet("ANY_USER_1", "ANY_TEXT_1", now.toSeconds)
-      val t2 = new Tweet("ANY_USER_2", "ANY_TEXT_2", BeginningOfEpoch.toSeconds)
-      val t3 = new Tweet("ANY_USER_3", "ANY_TEXT_3", AnyTimestamp.toSeconds)
+      val t1: Tweet = new Tweet("ANY_USER_1", "ANY_TEXT_1", now.toSeconds)
+      val t2: Tweet = new Tweet("ANY_USER_2", "ANY_TEXT_2", BeginningOfEpoch.toSeconds)
+      val t3: Tweet = new Tweet("ANY_USER_3", "ANY_TEXT_3", AnyTimestamp.toSeconds)
 
-      val messages = Seq(t1, t2, t3)
+      val messages: Seq[Tweet] = Seq(t1, t2, t3)
     }
   }
 
@@ -51,12 +52,12 @@ class KafkaSpec extends FunSpec with Matchers with BeforeAndAfterEach with Given
       Given("a ZooKeeper instance")
       And("a Kafka broker instance")
       And("some tweets")
-      val tweets = fixture.messages
+      val tweets: Seq[Tweet] = fixture.messages
       And("a single-threaded Kafka consumer group")
       // The Kafka consumer group must be running before the first messages are being sent to the topic.
-      val actualTweets = new mutable.SynchronizedQueue[Tweet]
+      val actualTweets: mutable.SynchronizedQueue[Tweet] = new mutable.SynchronizedQueue[Tweet]
       def consume(m: MessageAndMetadata[Array[Byte], Array[Byte]], c: ConsumerTaskContext): Unit = {
-        val tweet = Injection.invert[Tweet, Array[Byte]](m.message)
+        val tweet: Try[Tweet] = Injection.invert[Tweet, Array[Byte]](m.message)
         for {t <- tweet} {
           logger.info(s"Consumer thread ${c.threadId}: received Tweet $t from ${m.topic}:${m.partition}:${m.offset}")
           actualTweets += t
@@ -65,8 +66,8 @@ class KafkaSpec extends FunSpec with Matchers with BeforeAndAfterEach with Given
       kafkaZkCluster.createAndStartConsumer(topic.name, consume)
 
       When("I start a synchronous Kafka producer that sends the tweets in Avro binary format")
-      val producerApp = {
-        val c = new Properties
+      val producerApp: KafkaProducerApp = {
+        val c: Properties = new Properties
         c.put("producer.type", "sync")
         c.put("client.id", "test-sync-producer")
         c.put("request.required.acks", "1")
@@ -74,13 +75,13 @@ class KafkaSpec extends FunSpec with Matchers with BeforeAndAfterEach with Given
       }
       tweets foreach {
         case tweet =>
-          val bytes = Injection[Tweet, Array[Byte]](tweet)
+          val bytes: Array[Byte] = Injection[Tweet, Array[Byte]](tweet)
           logger.info(s"Synchronously sending Tweet $tweet to topic ${producerApp.defaultTopic}")
           producerApp.send(bytes)
       }
 
       Then("the consumer app should receive the tweets")
-      val waitForConsumerToReadStormOutput = 300.millis
+      val waitForConsumerToReadStormOutput: FiniteDuration = 300.millis
       logger.debug(s"Waiting $waitForConsumerToReadStormOutput for Kafka consumer threads to read messages")
       Thread.sleep(waitForConsumerToReadStormOutput.toMillis)
       logger.debug("Finished waiting for Kafka consumer threads to read messages")
@@ -91,12 +92,12 @@ class KafkaSpec extends FunSpec with Matchers with BeforeAndAfterEach with Given
       Given("a ZooKeeper instance")
       And("a Kafka broker instance")
       And("some tweets")
-      val tweets = fixture.messages
+      val tweets: Seq[Tweet] = fixture.messages
       And("a single-threaded Kafka consumer group")
       // The Kafka consumer group must be running before the first messages are being sent to the topic.
-      val actualTweets = new mutable.SynchronizedQueue[Tweet]
+      val actualTweets: mutable.SynchronizedQueue[Tweet] = new mutable.SynchronizedQueue[Tweet]
       def consume(m: MessageAndMetadata[Array[Byte], Array[Byte]], c: ConsumerTaskContext) {
-        val tweet = Injection.invert[Tweet, Array[Byte]](m.message())
+        val tweet: Try[Tweet] = Injection.invert[Tweet, Array[Byte]](m.message())
         for {t <- tweet} {
           logger.info(s"Consumer thread ${c.threadId}: received Tweet $t from ${m.topic}:${m.partition}:${m.offset}")
           actualTweets += t
@@ -104,15 +105,15 @@ class KafkaSpec extends FunSpec with Matchers with BeforeAndAfterEach with Given
       }
       kafkaZkCluster.createAndStartConsumer(topic.name, consume)
 
-      val waitForConsumerStartup = 300.millis
+      val waitForConsumerStartup: FiniteDuration = 300.millis
       logger.debug(s"Waiting $waitForConsumerStartup for Kafka consumer threads to launch")
       Thread.sleep(waitForConsumerStartup.toMillis)
       logger.debug("Finished waiting for Kafka consumer threads to launch")
 
       When("I start an asynchronous Kafka producer that sends the tweets in Avro binary format")
-      val producerApp = {
-        val asyncConfig = {
-          val c = new Properties
+      val producerApp: KafkaProducerApp = {
+        val asyncConfig: Properties = {
+          val c: Properties = new Properties
           c.put("producer.type", "async")
           c.put("client.id", "test-sync-producer")
           c.put("request.required.acks", "1")
@@ -125,13 +126,13 @@ class KafkaSpec extends FunSpec with Matchers with BeforeAndAfterEach with Given
       }
       tweets foreach {
         case tweet =>
-          val bytes = Injection[Tweet, Array[Byte]](tweet)
+          val bytes: Array[Byte] = Injection[Tweet, Array[Byte]](tweet)
           logger.info(s"Asynchronously sending Tweet $tweet to topic ${producerApp.defaultTopic}")
           producerApp.send(bytes)
       }
 
       Then("the consumer app should receive the tweets")
-      val waitForConsumerToReadStormOutput = 300.millis
+      val waitForConsumerToReadStormOutput: FiniteDuration = 300.millis
       logger.debug(s"Waiting $waitForConsumerToReadStormOutput for Kafka consumer threads to read messages")
       Thread.sleep(waitForConsumerToReadStormOutput.toMillis)
       logger.debug("Finished waiting for Kafka consumer threads to read messages")

@@ -1,12 +1,14 @@
 package com.miguno.kafkastorm.kafka
 
 import java.util.Properties
-import java.util.concurrent.Executors
+import java.util.concurrent.{ExecutorService, Executors}
 
 import com.miguno.kafkastorm.logging.LazyLogging
-import kafka.consumer.{Consumer, ConsumerConfig, KafkaStream}
+import kafka.consumer.{Consumer, ConsumerConfig, ConsumerConnector, KafkaStream}
 import kafka.message.MessageAndMetadata
 import kafka.serializer.DefaultDecoder
+
+import scala.collection.Map
 import scala.trace.{Pos, implicitlyFormatable}
 
 /**
@@ -28,27 +30,27 @@ class KafkaConsumerApp[T](val topic: String,
                           val numStreams: Int,
                           config: Properties = new Properties) extends LazyLogging {
 
-  private val effectiveConfig = {
-    val c = new Properties
+  private val effectiveConfig: Properties = {
+    val c: Properties = new Properties
     c.load(this.getClass.getResourceAsStream("/consumer-defaults.properties"))
     c.putAll(config)
     c.put("zookeeper.connect", zookeeperConnect)
     c
   }
 
-  private val executor = Executors.newFixedThreadPool(numStreams)
-  private val consumerConnector = Consumer.create(new ConsumerConfig(effectiveConfig))
+  private val executor: ExecutorService = Executors.newFixedThreadPool(numStreams)
+  private val consumerConnector: ConsumerConnector = Consumer.create(new ConsumerConfig(effectiveConfig))
 
   logger.info((s"Connecting to topic $topic via ZooKeeper $zookeeperConnect" + Pos()).wrap)
 
   def startConsumers(f: (MessageAndMetadata[Array[Byte], Array[Byte]], ConsumerTaskContext, Option[T]) => Unit,
                      startup: (ConsumerTaskContext) => Option[T] = (c: ConsumerTaskContext) => None,
                      shutdown: (ConsumerTaskContext, Option[T]) => Unit = (c: ConsumerTaskContext, t: Option[T]) => ()) {
-    val topicCountMap = Map(topic -> numStreams)
-    val valueDecoder = new DefaultDecoder
-    val keyDecoder = valueDecoder
-    val consumerMap = consumerConnector.createMessageStreams(topicCountMap, keyDecoder, valueDecoder)
-    val consumerThreads = consumerMap.get(topic) match {
+    val topicCountMap: Map[String, Int] = Map(topic -> numStreams)
+    val valueDecoder: DefaultDecoder = new DefaultDecoder
+    val keyDecoder: DefaultDecoder = valueDecoder
+    val consumerMap: Map[String, List[KafkaStream[Array[Byte], Array[Byte]]]] = consumerConnector.createMessageStreams(topicCountMap, keyDecoder, valueDecoder)
+    val consumerThreads: Seq[ConsumerTask[Array[Byte], Array[Byte], T, ConsumerTaskContext]] = consumerMap.get(topic) match {
       case Some(streams) => streams.view.zipWithIndex map {
         case (stream, threadId) =>
           new ConsumerTask(stream, new ConsumerTaskContext(threadId, effectiveConfig), f, startup, shutdown)

@@ -15,31 +15,34 @@ import kafka.message.MessageAndMetadata
 import kafka.serializer.DefaultDecoder
 import org.apache.commons.io.FileUtils
 import org.apache.commons.pool2.impl.{GenericObjectPool, GenericObjectPoolConfig}
-import org.apache.spark.SparkConf
+import org.apache.spark.{Accumulator, SparkConf}
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.kafka.KafkaUtils
-import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.streaming.{Duration, Seconds, StreamingContext}
 import org.scalatest._
 
+import scala.collection.immutable.IndexedSeq
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.language.reflectiveCalls
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 @DoNotDiscover
 class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAfterEach with GivenWhenThen with LazyLogging {
 
-  implicit val specificAvroBinaryInjectionForTweet = SpecificAvroCodecs.toBinary[Tweet]
+  implicit val specificAvroBinaryInjectionForTweet: Injection[Tweet, Array[Byte]] = SpecificAvroCodecs.toBinary[Tweet]
 
-  private val inputTopic = KafkaTopic("testing-input")
-  private val outputTopic = KafkaTopic("testing-output")
-  private val sparkCheckpointRootDir = {
-    val r = (new scala.util.Random).nextInt()
-    val path = Seq(System.getProperty("java.io.tmpdir"), "spark-test-checkpoint-" + r).mkString(File.separator)
+  private val inputTopic: KafkaTopic = KafkaTopic("testing-input")
+  private val outputTopic: KafkaTopic = KafkaTopic("testing-output")
+  private val sparkCheckpointRootDir: File = {
+    val r: Int = (new scala.util.Random).nextInt()
+    val path: String = Seq(System.getProperty("java.io.tmpdir"), "spark-test-checkpoint-" + r).mkString(File.separator)
     new File(path)
   }
 
-  private val kafkaZkCluster = new EmbeddedKafkaZooKeeperCluster(topics = Seq(inputTopic, outputTopic))
+  private val kafkaZkCluster: EmbeddedKafkaZooKeeperCluster = new EmbeddedKafkaZooKeeperCluster(topics = Seq(inputTopic, outputTopic))
   private var ssc: StreamingContext = _
 
   override def beforeEach() {
@@ -48,14 +51,14 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
   }
 
   private def prepareSparkStreaming(): Unit = {
-    val sparkConf = {
-      val conf = new SparkConf().setAppName("kafka-spark-streaming-starter")
+    val sparkConf: SparkConf = {
+      val conf: SparkConf = new SparkConf().setAppName("kafka-spark-streaming-starter")
       // Make sure you give enough cores to your Spark Streaming application.  You need cores for running "receivers"
       // and for powering the actual the processing.  In Spark Streaming, each receiver is responsible for 1 input
       // DStream, and each receiver occupies 1 core.  If all your cores are occupied by receivers then no data will be
       // processed!
       // https://spark.apache.org/docs/1.1.0/streaming-programming-guide.html
-      val cores = inputTopic.partitions + 1
+      val cores: Int = inputTopic.partitions + 1
       conf.setMaster(s"local[$cores]")
       // Use Kryo to speed up serialization, recommended as default setup for Spark Streaming
       // http://spark.apache.org/docs/1.1.0/tuning.html#data-serialization
@@ -73,7 +76,7 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
       conf.set("spark.streaming.unpersist", "true")
       conf
     }
-    val batchInterval = Seconds(1)
+    val batchInterval: Duration = Seconds(1)
     ssc = new StreamingContext(sparkConf, batchInterval)
     ssc.checkpoint(sparkCheckpointRootDir.toString)
   }
@@ -89,17 +92,17 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
     FileUtils.deleteQuietly(sparkCheckpointRootDir)
   }
 
-  val fixture = {
-    val BeginningOfEpoch = 0.seconds
-    val AnyTimestamp = 1234.seconds
-    val now = System.currentTimeMillis().millis
+  val fixture: Object {val messages: Seq[Tweet]; val t1: Tweet; val t3: Tweet; val t2: Tweet} = {
+    val BeginningOfEpoch: FiniteDuration = 0.seconds
+    val AnyTimestamp: FiniteDuration = 1234.seconds
+    val now: FiniteDuration = System.currentTimeMillis().millis
 
     new {
-      val t1 = new Tweet("ANY_USER_1", "ANY_TEXT_1", now.toSeconds)
-      val t2 = new Tweet("ANY_USER_2", "ANY_TEXT_2", BeginningOfEpoch.toSeconds)
-      val t3 = new Tweet("ANY_USER_3", "ANY_TEXT_3", AnyTimestamp.toSeconds)
+      val t1: Tweet = new Tweet("ANY_USER_1", "ANY_TEXT_1", now.toSeconds)
+      val t2: Tweet = new Tweet("ANY_USER_2", "ANY_TEXT_2", BeginningOfEpoch.toSeconds)
+      val t3: Tweet = new Tweet("ANY_USER_3", "ANY_TEXT_3", AnyTimestamp.toSeconds)
 
-      val messages = Seq(t1, t2, t3)
+      val messages: Seq[Tweet] = Seq(t1, t2, t3)
     }
   }
 
@@ -113,12 +116,12 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
       Given("a ZooKeeper instance")
       And("a Kafka broker instance")
       And("some tweets")
-      val tweets = fixture.messages
+      val tweets: Seq[Tweet] = fixture.messages
 
       And(s"a synchronous Kafka producer app that writes to the topic $inputTopic")
-      val producerApp = {
-        val config = {
-          val c = new Properties
+      val producerApp: KafkaProducerApp = {
+        val config: Properties = {
+          val c: Properties = new Properties
           c.put("producer.type", "sync")
           c.put("client.id", "kafka-spark-streaming-test-sync-producer")
           c.put("request.required.acks", "1")
@@ -128,23 +131,23 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
       }
 
       And(s"a single-threaded Kafka consumer app that reads from topic $outputTopic and Avro-decodes the incoming data")
-      val actualTweets = new mutable.SynchronizedQueue[Tweet]
+      val actualTweets: mutable.SynchronizedQueue[Tweet] = new mutable.SynchronizedQueue[Tweet]
       def consume(m: MessageAndMetadata[Array[Byte], Array[Byte]], c: ConsumerTaskContext) {
-        val tweet = Injection.invert(m.message())
+        val tweet: Try[Tweet] = Injection.invert(m.message())
         for {t <- tweet} {
           logger.info(s"Consumer thread ${c.threadId}: received Tweet $t from ${m.topic}:${m.partition}:${m.offset}")
           actualTweets += t
         }
       }
       kafkaZkCluster.createAndStartConsumer(outputTopic.name, consume)
-      val waitForConsumerStartup = 300.millis
+      val waitForConsumerStartup: FiniteDuration = 300.millis
       logger.debug(s"Waiting $waitForConsumerStartup for the Kafka consumer to start up")
       Thread.sleep(waitForConsumerStartup.toMillis)
 
       When("I Avro-encode the tweets and use the Kafka producer app to sent them to Kafka")
       tweets foreach {
         case tweet =>
-          val bytes = Injection(tweet)
+          val bytes: Array[Byte] = Injection(tweet)
           logger.info(s"Synchronously sending Tweet $tweet to topic ${producerApp.defaultTopic}")
           producerApp.send(bytes)
       }
@@ -152,9 +155,9 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
       // Required to gain access to RDD transformations via implicits.  We include this import here to highlight its
       // importance and where it will take effect.
       import org.apache.spark.SparkContext._
-      val kafkaStream = {
+      val kafkaStream: DStream[Array[Byte]] = {
         val sparkStreamingConsumerGroup = "spark-streaming-consumer-group"
-        val kafkaParams = Map[String, String](
+        val kafkaParams: Map[String, String] = Map[String, String](
           "zookeeper.connect" -> kafkaZkCluster.zookeeper.connectString,
           "group.id" -> sparkStreamingConsumerGroup,
           // CAUTION: Spark's use of auto.offset.reset is DIFFERENT from Kafka's behavior!
@@ -172,7 +175,7 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
         // And yes, the way we do this looks quite strange -- we combine a hardcoded `1` in the topic map with a
         // subsequent `(1..N)` construct.  But this approach is the recommended way.
         // See http://spark.apache.org/docs/1.1.0/streaming-programming-guide.html#reducing-the-processing-time-of-each-batch
-        val streams = (1 to inputTopic.partitions) map { _ =>
+        val streams: IndexedSeq[DStream[Array[Byte]]] = (1 to inputTopic.partitions) map { _ =>
           KafkaUtils.createStream[Array[Byte], Array[Byte], DefaultDecoder, DefaultDecoder](
             ssc,
             kafkaParams,
@@ -180,7 +183,7 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
             storageLevel = StorageLevel.MEMORY_ONLY_SER // or: StorageLevel.MEMORY_AND_DISK_SER
           ).map(_._2)
         }
-        val unifiedStream = ssc.union(streams) // Merge the "per-partition" DStreams
+        val unifiedStream: DStream[Array[Byte]] = ssc.union(streams) // Merge the "per-partition" DStreams
         val sparkProcessingParallelism = 1 // You'd probably pick a higher value than 1 in production.
         // Repartition distributes the received batches of data across specified number of machines in the cluster
         // before further processing.  Essentially, what we are doing here is to decouple processing parallelism from
@@ -190,15 +193,15 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
 
       // We use accumulators to track the number of consumed and produced messages across all tasks.  Named accumulators
       // are also said to be displayed in Spark's UI but we haven't found them yet. :-)
-      val numInputMessages = ssc.sparkContext.accumulator(0L, "Kafka messages consumed")
-      val numOutputMessages = ssc.sparkContext.accumulator(0L, "Kafka messages produced")
+      val numInputMessages: Accumulator[Long] = ssc.sparkContext.accumulator(0L, "Kafka messages consumed")
+      val numOutputMessages: Accumulator[Long] = ssc.sparkContext.accumulator(0L, "Kafka messages produced")
       // We use a broadcast variable to share a pool of Kafka producers, which we use to write data from Spark to Kafka.
-      val producerPool = {
-        val pool = createKafkaProducerPool(kafkaZkCluster.kafka.brokerList, outputTopic.name)
+      val producerPool: Broadcast[GenericObjectPool[KafkaProducerApp]] = {
+        val pool: GenericObjectPool[KafkaProducerApp] = createKafkaProducerPool(kafkaZkCluster.kafka.brokerList, outputTopic.name)
         ssc.sparkContext.broadcast(pool)
       }
       // We also use a broadcast variable for Bijection/Injection.
-      val converter = ssc.sparkContext.broadcast(specificAvroBinaryInjectionForTweet)
+      val converter: Broadcast[Injection[Tweet, Array[Byte]]] = ssc.sparkContext.broadcast(specificAvroBinaryInjectionForTweet)
 
       // Note: When working on PairDStreams (which we are not doing here) do not forget to import the corresponding
       // implicits (see import statement below) in order to pick up implicits that allow `DStream.reduceByKey` etc.
@@ -219,9 +222,9 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
         }
       }.foreachRDD(rdd => {
         rdd.foreachPartition(partitionOfRecords => {
-          val p = producerPool.value.borrowObject()
+          val p: KafkaProducerApp = producerPool.value.borrowObject()
           partitionOfRecords.foreach { case tweet: Tweet =>
-            val bytes = converter.value.apply(tweet)
+            val bytes: Array[Byte] = converter.value.apply(tweet)
             p.send(bytes)
             numOutputMessages += 1
           }
@@ -238,7 +241,7 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
       And("the job should write back all tweets to Kafka")
       numOutputMessages.value should be(tweets.size)
       And("the Kafka consumer app should receive the original tweets from the Spark Streaming job")
-      val waitToReadSparkOutput = 300.millis
+      val waitToReadSparkOutput: FiniteDuration = 300.millis
       logger.debug(s"Waiting $waitToReadSparkOutput for Kafka consumer to read Spark Streaming output from Kafka")
       Thread.sleep(waitToReadSparkOutput.toMillis)
       actualTweets.toSeq should be(tweets.toSeq)
@@ -250,10 +253,10 @@ class KafkaSparkStreamingSpec extends FeatureSpec with Matchers with BeforeAndAf
   }
 
   private def createKafkaProducerPool(brokerList: String, topic: String): GenericObjectPool[KafkaProducerApp] = {
-    val producerFactory = new BaseKafkaProducerAppFactory(brokerList, defaultTopic = Option(topic))
-    val pooledProducerFactory = new PooledKafkaProducerAppFactory(producerFactory)
-    val poolConfig = {
-      val c = new GenericObjectPoolConfig
+    val producerFactory: BaseKafkaProducerAppFactory = new BaseKafkaProducerAppFactory(brokerList, defaultTopic = Option(topic))
+    val pooledProducerFactory: PooledKafkaProducerAppFactory = new PooledKafkaProducerAppFactory(producerFactory)
+    val poolConfig: GenericObjectPoolConfig = {
+      val c: GenericObjectPoolConfig = new GenericObjectPoolConfig
       val maxNumProducers = 10
       c.setMaxTotal(maxNumProducers)
       c.setMaxIdle(maxNumProducers)

@@ -27,9 +27,9 @@ case class KafkaProducerApp(brokerList: String,
 
   require(brokerList == null || !brokerList.isEmpty, "Must set broker list")
 
-  private val p = producer getOrElse {
-    val effectiveConfig = {
-      val c = new Properties
+  private val p: Producer[Array[Byte], Array[Byte]] = producer getOrElse {
+    val effectiveConfig: Properties = {
+      val c: Properties = new Properties
       c.load(this.getClass.getResourceAsStream("/producer-defaults.properties"))
       c.putAll(producerConfig)
       c.put("metadata.broker.list", brokerList)
@@ -40,10 +40,10 @@ case class KafkaProducerApp(brokerList: String,
 
   // The configuration field of the wrapped producer is immutable (including its nested fields), so it's safe to expose
   // it directly.
-  val config = p.config
+  val config: ProducerConfig = p.config
 
   private def toMessage(value: Val, key: Option[Key] = None, topic: Option[String] = None): KeyedMessage[Key, Val] = {
-    val t = topic.getOrElse(defaultTopic.getOrElse(throw new IllegalArgumentException("Must provide topic or default topic")))
+    val t: String = topic.getOrElse(defaultTopic.getOrElse(throw new IllegalArgumentException("Must provide topic or default topic")))
     require(!t.isEmpty, "Topic must not be empty")
     key match {
       case Some(k) => new KeyedMessage(t, k, value)
@@ -101,6 +101,6 @@ class BaseKafkaProducerAppFactory(brokerList: String,
                                   defaultTopic: Option[String] = None)
   extends KafkaProducerAppFactory(brokerList, config, defaultTopic) {
 
-  override def newInstance() = new KafkaProducerApp(brokerList, config, defaultTopic)
+  override def newInstance(): KafkaProducerApp = new KafkaProducerApp(brokerList, config, defaultTopic)
 
 }

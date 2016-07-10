@@ -31,8 +31,7 @@ import scala.util.{Failure, Success, Try}
  * val decoderBolt = new AvroDecoderBolt[Tweet]
  * builder.setBolt(decoderBoltId, decoderBolt).shuffleGrouping(spoutId) // or whatever grouping you need
  * }}}
- *
- * @param inputField The name of the field in the input tuple to read from.  (Default: "bytes")
+  * @param inputField The name of the field in the input tuple to read from.  (Default: "bytes")
  * @param outputField The name of the field in the output tuple to write to.  (Default: "pojo")
  * @tparam T The type of the Avro record (e.g. a `Tweet`) based on the underlying Avro schema being used.  Must be
  *           a subclass of Avro's `SpecificRecordBase`.
@@ -46,7 +45,7 @@ class AvroDecoderBolt[T <: SpecificRecordBase : Manifest](inputField: String = "
   // this class in a Storm topology.
   //
   // See "SI-5919: Type tags (and Exprs as well) should be serializable" (https://issues.scala-lang.org/browse/SI-5919)
-  val tpe = manifest[T]
+  val tpe: Manifest[T] = manifest[T]
 
   // Must be transient because Logger is not serializable
   @transient lazy private val log: Logger = LoggerFactory.getLogger(classOf[AvroDecoderBolt[T]])
@@ -56,7 +55,7 @@ class AvroDecoderBolt[T <: SpecificRecordBase : Manifest](inputField: String = "
     SpecificAvroCodecs.toBinary[T]
 
   override def execute(tuple: Tuple, collector: BasicOutputCollector) {
-    val readTry = Try(tuple.getBinaryByField(inputField))
+    val readTry: Try[Array[Byte]] = Try(tuple.getBinaryByField(inputField))
     readTry match {
       case Success(bytes) if bytes != null => decodeAndEmit(bytes, collector)
       case Success(_) => log.error(("Reading from input tuple returned null" + Pos()).wrap)
@@ -67,7 +66,7 @@ class AvroDecoderBolt[T <: SpecificRecordBase : Manifest](inputField: String = "
 
   private def decodeAndEmit(bytes: Array[Byte], collector: BasicOutputCollector) {
     require(bytes != null, "bytes must not be null")
-    val decodeTry = Injection.invert(bytes)
+    val decodeTry: Try[T] = Injection.invert(bytes)
     decodeTry match {
       case Success(pojo) =>
         log.debug(("Binary data decoded into pojo: " + pojo + Pos()).wrap)
@@ -93,16 +92,15 @@ object AvroDecoderBolt {
    * // in Java
    * AvroDecoderBolt decoderBolt = AvroDecoderBolt.ofType(Tweet.class);
    * }}}
-   *
-   * @param cls
+    * @param cls
    * @tparam T
    * @return
    */
-  def ofType[T <: SpecificRecordBase](cls: java.lang.Class[T]) = {
-    val manifest = Manifest.classType[T](cls)
+  def ofType[T <: SpecificRecordBase](cls: java.lang.Class[T]): AvroDecoderBolt[T] = {
+    val manifest: Manifest[T] = Manifest.classType[T](cls)
     newInstance[T](manifest)
   }
 
-  private def newInstance[T <: SpecificRecordBase : Manifest] = new AvroDecoderBolt[T]
+  private def newInstance[T <: SpecificRecordBase : Manifest]: AvroDecoderBolt[T] = new AvroDecoderBolt[T]
 
 }

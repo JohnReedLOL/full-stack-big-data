@@ -12,7 +12,7 @@ import com.miguno.avro.Tweet
 import com.miguno.kafkastorm.kafka._
 import com.miguno.kafkastorm.logging.LazyLogging
 import com.miguno.kafkastorm.storm.bolts.{AvroDecoderBolt, AvroKafkaSinkBolt}
-import com.miguno.kafkastorm.storm.serialization.{TweetAvroKryoDecorator, AvroScheme}
+import com.miguno.kafkastorm.storm.serialization.{AvroScheme, TweetAvroKryoDecorator}
 import com.miguno.kafkastorm.testing.{EmbeddedKafkaZooKeeperCluster, KafkaTopic}
 import com.twitter.bijection.Injection
 import com.twitter.bijection.avro.SpecificAvroCodecs
@@ -22,6 +22,7 @@ import org.scalatest._
 import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.language.reflectiveCalls
+import scala.util.Try
 
 /**
  * This Kafka/Storm integration test code is slightly more complicated than the other tests in this project.  This is
@@ -33,11 +34,11 @@ import scala.language.reflectiveCalls
 @DoNotDiscover
 class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach with GivenWhenThen with LazyLogging {
 
-  implicit val specificAvroBinaryInjectionForTweet = SpecificAvroCodecs.toBinary[Tweet]
+  implicit val specificAvroBinaryInjectionForTweet: Injection[Tweet, Array[Byte]] = SpecificAvroCodecs.toBinary[Tweet]
 
-  private val inputTopic = KafkaTopic("testing-input")
-  private val outputTopic = KafkaTopic("testing-output")
-  private val kafkaZkCluster = new EmbeddedKafkaZooKeeperCluster(topics = Seq(inputTopic, outputTopic))
+  private val inputTopic: KafkaTopic = KafkaTopic("testing-input")
+  private val outputTopic: KafkaTopic = KafkaTopic("testing-output")
+  private val kafkaZkCluster: EmbeddedKafkaZooKeeperCluster = new EmbeddedKafkaZooKeeperCluster(topics = Seq(inputTopic, outputTopic))
 
   override def beforeEach() {
     kafkaZkCluster.start()
@@ -47,17 +48,17 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
     kafkaZkCluster.stop()
   }
 
-  val fixture = {
-    val BeginningOfEpoch = 0.seconds
-    val AnyTimestamp = 1234.seconds
-    val now = System.currentTimeMillis().millis
+  val fixture: Object {val messages: Seq[Tweet]; val t1: Tweet; val t3: Tweet; val t2: Tweet} = {
+    val BeginningOfEpoch: FiniteDuration = 0.seconds
+    val AnyTimestamp: FiniteDuration = 1234.seconds
+    val now: FiniteDuration = System.currentTimeMillis().millis
 
     new {
-      val t1 = new Tweet("ANY_USER_1", "ANY_TEXT_1", now.toSeconds)
-      val t2 = new Tweet("ANY_USER_2", "ANY_TEXT_2", BeginningOfEpoch.toSeconds)
-      val t3 = new Tweet("ANY_USER_3", "ANY_TEXT_3", AnyTimestamp.toSeconds)
+      val t1: Tweet = new Tweet("ANY_USER_1", "ANY_TEXT_1", now.toSeconds)
+      val t2: Tweet = new Tweet("ANY_USER_2", "ANY_TEXT_2", BeginningOfEpoch.toSeconds)
+      val t3: Tweet = new Tweet("ANY_USER_3", "ANY_TEXT_3", AnyTimestamp.toSeconds)
 
-      val messages = Seq(t1, t2, t3)
+      val messages: Seq[Tweet] = Seq(t1, t2, t3)
     }
   }
 
@@ -74,25 +75,25 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
         s"writes them as-is to topic ${outputTopic.name}")
       // We create a topology instance that makes use of an Avro decoder bolt to deserialize the Kafka spout's output
       // into pojos.  Here, the data flow is KafkaSpout -> AvroDecoderBolt -> AvroKafkaSinkBolt.
-      val builder = new TopologyBuilder
+      val builder: TopologyBuilder = new TopologyBuilder
       val kafkaSpoutId = "kafka-spout"
-      val kafkaSpoutConfig = kafkaSpoutBaseConfig(kafkaZkCluster.zookeeper.connectString, inputTopic.name)
-      val kafkaSpout = new KafkaSpout(kafkaSpoutConfig)
+      val kafkaSpoutConfig: SpoutConfig = kafkaSpoutBaseConfig(kafkaZkCluster.zookeeper.connectString, inputTopic.name)
+      val kafkaSpout: KafkaSpout = new KafkaSpout(kafkaSpoutConfig)
       val numSpoutExecutors = 1
       builder.setSpout(kafkaSpoutId, kafkaSpout, numSpoutExecutors)
 
       val decoderBoltId = "avro-decoder-bolt"
-      val decoderBolt = new AvroDecoderBolt[Tweet]
+      val decoderBolt: AvroDecoderBolt[Tweet] = new AvroDecoderBolt[Tweet]
       // Note: Should test messages arrive out-of-order, we may want to enforce a parallelism of 1 for this bolt.
       builder.setBolt(decoderBoltId, decoderBolt).globalGrouping(kafkaSpoutId)
 
       val kafkaSinkBoltId = "avro-kafka-sink-bolt"
-      val producerAppFactory =
+      val producerAppFactory: BaseKafkaProducerAppFactory =
         new BaseKafkaProducerAppFactory(kafkaZkCluster.kafka.brokerList, defaultTopic = Option(outputTopic.name))
-      val kafkaSinkBolt = new AvroKafkaSinkBolt[Tweet](producerAppFactory)
+      val kafkaSinkBolt: AvroKafkaSinkBolt[Tweet] = new AvroKafkaSinkBolt[Tweet](producerAppFactory)
       // Note: Should test messages arrive out-of-order, we may want to enforce a parallelism of 1 for this bolt.
       builder.setBolt(kafkaSinkBoltId, kafkaSinkBolt).globalGrouping(decoderBoltId)
-      val topology = builder.createTopology()
+      val topology: StormTopology = builder.createTopology()
 
       baseIntegrationTest(topology, inputTopic.name, outputTopic.name)
     }
@@ -110,33 +111,33 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
       // Note that Storm will still need to re-serialize the spout's pojo output to send the data across the wire to
       // downstream consumers/bolts, which will then deserialize the data again.  In our case we have a custom Kryo
       // serializer registered with Storm to make this serde step as fast as possible.
-      val builder = new TopologyBuilder
+      val builder: TopologyBuilder = new TopologyBuilder
       val kafkaSpoutId = "kafka-spout"
-      val kafkaSpoutConfig = kafkaSpoutBaseConfig(kafkaZkCluster.zookeeper.connectString, inputTopic.name)
+      val kafkaSpoutConfig: SpoutConfig = kafkaSpoutBaseConfig(kafkaZkCluster.zookeeper.connectString, inputTopic.name)
       // You can provide the Kafka spout with a custom `Scheme` to deserialize incoming messages in a particular way.
       // The default scheme is Storm's `backtype.storm.spout.RawMultiScheme`, which simply returns the raw bytes of the
       // incoming data (i.e. leaving deserialization up to you).  In this example, we configure the spout to use
       // a custom scheme, AvroScheme[Tweet], which will modify the spout to automatically deserialize incoming data
       // into pojos.
       kafkaSpoutConfig.scheme = new SchemeAsMultiScheme(new AvroScheme[Tweet])
-      val kafkaSpout = new KafkaSpout(kafkaSpoutConfig)
+      val kafkaSpout: KafkaSpout = new KafkaSpout(kafkaSpoutConfig)
       val numSpoutExecutors = 1
       builder.setSpout(kafkaSpoutId, kafkaSpout, numSpoutExecutors)
 
       val kafkaSinkBoltId = "avro-kafka-sink-bolt"
-      val producerAppFactory =
+      val producerAppFactory: BaseKafkaProducerAppFactory =
         new BaseKafkaProducerAppFactory(kafkaZkCluster.kafka.brokerList, defaultTopic = Option(outputTopic.name))
-      val kafkaSinkBolt = new AvroKafkaSinkBolt[Tweet](producerAppFactory)
+      val kafkaSinkBolt: AvroKafkaSinkBolt[Tweet] = new AvroKafkaSinkBolt[Tweet](producerAppFactory)
       // Note: Should test messages arrive out-of-order, we may want to enforce a parallelism of 1 for this bolt.
       builder.setBolt(kafkaSinkBoltId, kafkaSinkBolt).globalGrouping(kafkaSpoutId)
-      val topology = builder.createTopology()
+      val topology: StormTopology = builder.createTopology()
 
       baseIntegrationTest(topology, inputTopic.name, outputTopic.name)
     }
   }
 
   private def kafkaSpoutBaseConfig(zookeeperConnect: String, inputTopic: String): SpoutConfig = {
-    val zkHosts = new ZkHosts(zookeeperConnect)
+    val zkHosts: ZkHosts = new ZkHosts(zookeeperConnect)
     val zkRoot = "/kafka-storm-starter-spout"
     //  This id is appended to zkRoot for constructing a ZK path under which the spout stores partition information.
     val zkId = "kafka-spout"
@@ -152,7 +153,7 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
     //    1. Do nothing -- reading from the end of the topic is the default behavior.
     //    2. spoutConfig.startOffsetTime = kafka.api.OffsetRequest.LatestTime
     //
-    val spoutConfig = new SpoutConfig(zkHosts, inputTopic, zkRoot, zkId)
+    val spoutConfig: SpoutConfig = new SpoutConfig(zkHosts, inputTopic, zkRoot, zkId)
     spoutConfig
   }
 
@@ -167,13 +168,13 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
    */
   private def baseIntegrationTest(topology: StormTopology, inputTopic: String, outputTopic: String) {
     And("some tweets")
-    val f = fixture
-    val tweets = f.messages
+    val f: Object {val messages: Seq[Tweet]; val t1: Tweet; val t3: Tweet; val t2: Tweet} = fixture
+    val tweets: Seq[Tweet] = f.messages
 
     And(s"a synchronous Kafka producer app that writes to the topic $inputTopic")
-    val producerApp = {
-      val config = {
-        val c = new Properties
+    val producerApp: KafkaProducerApp = {
+      val config: Properties = {
+        val c: Properties = new Properties
         c.put("producer.type", "sync")
         c.put("client.id", "kafka-storm-test-sync-producer")
         c.put("request.required.acks", "1")
@@ -187,9 +188,9 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
     // to the output Kafka topic.  The Storm topology will write its output to this topic.  We use the Kafka consumer
     // group to learn which data was created by Storm, and compare this actual output data to the expected data (which
     // in our case is the original input data).
-    val actualTweets = new mutable.SynchronizedQueue[Tweet]
+    val actualTweets: mutable.SynchronizedQueue[Tweet] = new mutable.SynchronizedQueue[Tweet]
     def consume(m: MessageAndMetadata[Array[Byte], Array[Byte]], c: ConsumerTaskContext) {
-      val tweet = Injection.invert[Tweet, Array[Byte]](m.message())
+      val tweet: Try[Tweet] = Injection.invert[Tweet, Array[Byte]](m.message())
       for {t <- tweet} {
         logger.info(s"Consumer thread ${c.threadId}: received Tweet $t from ${m.topic}:${m.partition}:${m.offset}")
         actualTweets += t
@@ -200,8 +201,8 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
     And("a Storm topology configuration that registers an Avro Kryo decorator for Tweet")
     // We create the topology configuration here simply to clarify that it is part of the test's initial context defined
     // under "Given".
-    val topologyConfig = {
-      val conf = new Config
+    val topologyConfig: Config = {
+      val conf: Config = new Config
       // Use more than one worker thread.  It looks as if serialization occurs only if you have actual parallelism in
       // LocalCluster (i.e. numWorkers > 1).
       conf.setNumWorkers(2)
@@ -216,10 +217,10 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
     }
 
     When("I run the Storm topology")
-    val stormTestClusterParameters = {
-      val mkClusterParam = new MkClusterParam
+    val stormTestClusterParameters: MkClusterParam = {
+      val mkClusterParam: MkClusterParam = new MkClusterParam
       mkClusterParam.setSupervisors(2)
-      val stormClusterConfig = new Config
+      val stormClusterConfig: Config = new Config
 
       // (requires Storm 0.9.3+ with STORM-213):
       // Storm shall use our existing in-memory ZK instance instead of starting its own, which it does by default as
@@ -237,24 +238,24 @@ class KafkaStormSpec extends FeatureSpec with Matchers with BeforeAndAfterEach w
       override def run(stormCluster: ILocalCluster) {
         val topologyName = "storm-kafka-integration-test"
         stormCluster.submitTopology(topologyName, topologyConfig, topology)
-        val waitForTopologyStartup = 5.seconds
+        val waitForTopologyStartup: FiniteDuration = 5.seconds
         Thread.sleep(waitForTopologyStartup.toMillis)
 
         And("I Avro-encode the tweets and use the Kafka producer app to sent them to Kafka")
         tweets foreach {
           case tweet =>
-            val bytes = Injection[Tweet, Array[Byte]](tweet)
+            val bytes: Array[Byte] = Injection[Tweet, Array[Byte]](tweet)
             info(s"Synchronously sending Tweet $tweet to topic ${producerApp.defaultTopic}")
             producerApp.send(bytes)
         }
 
-        val waitForStormToReadFromKafka = 3.second
+        val waitForStormToReadFromKafka: FiniteDuration = 3.second
         Thread.sleep(waitForStormToReadFromKafka.toMillis)
       }
     })
 
     Then("the Kafka consumer app should receive the original tweets from the Storm topology")
-    val waitForConsumerToReadStormOutput = 300.millis
+    val waitForConsumerToReadStormOutput: FiniteDuration = 300.millis
     Thread.sleep(waitForConsumerToReadStormOutput.toMillis)
     actualTweets.toSeq should be(tweets.toSeq)
   }

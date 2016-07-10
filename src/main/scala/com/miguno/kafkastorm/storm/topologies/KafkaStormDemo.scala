@@ -28,21 +28,21 @@ class KafkaStormDemo(kafkaZkConnect: String, topic: String, numTopicPartitions: 
                      topologyName: String = "kafka-storm-starter", runtime: Duration = 1.hour) {
 
   def runTopologyLocally() {
-    val zkHosts = new ZkHosts(kafkaZkConnect)
+    val zkHosts: ZkHosts = new ZkHosts(kafkaZkConnect)
     val topic = "testing"
     val zkRoot = "/kafka-spout"
     // The spout appends this id to zkRoot when composing its ZooKeeper path.  You don't need a leading `/`.
     val zkSpoutId = "kafka-storm-starter"
-    val kafkaConfig = new SpoutConfig(zkHosts, topic, zkRoot, zkSpoutId)
-    val kafkaSpout = new KafkaSpout(kafkaConfig)
-    val numSpoutExecutors = numTopicPartitions
-    val builder = new TopologyBuilder
+    val kafkaConfig: SpoutConfig = new SpoutConfig(zkHosts, topic, zkRoot, zkSpoutId)
+    val kafkaSpout: KafkaSpout = new KafkaSpout(kafkaConfig)
+    val numSpoutExecutors: Int = numTopicPartitions
+    val builder: TopologyBuilder = new TopologyBuilder
     val spoutId = "kafka-spout"
     builder.setSpout(spoutId, kafkaSpout, numSpoutExecutors)
 
     // Showcases how to customize the topology configuration
-    val topologyConfiguration = {
-      val c = new Config
+    val topologyConfiguration: Config = {
+      val c: Config = new Config
       c.setDebug(false)
       c.setNumWorkers(4)
       c.setMaxSpoutPending(1000)
@@ -58,10 +58,10 @@ class KafkaStormDemo(kafkaZkConnect: String, topic: String, numTopicPartitions: 
     }
 
     // Now run the topology in a local, in-memory Storm cluster
-    val cluster = new LocalCluster
+    val cluster: LocalCluster = new LocalCluster
     cluster.submitTopology(topologyName, topologyConfiguration, builder.createTopology())
     Thread.sleep(runtime.toMillis)
-    val killOpts = new KillOptions()
+    val killOpts: KillOptions = new KillOptions()
     killOpts.set_wait_secs(1)
     cluster.killTopologyWithOpts(topologyName, killOpts)
     cluster.shutdown()
@@ -79,7 +79,7 @@ object KafkaStormDemo {
     val kafkaTopic = "testing"
     startZooKeeperAndKafka(kafkaTopic)
     for {z <- zookeeperEmbedded} {
-      val topology = new KafkaStormDemo(z.connectString, kafkaTopic)
+      val topology: KafkaStormDemo = new KafkaStormDemo(z.connectString, kafkaTopic)
       topology.runTopologyLocally()
     }
     stopZooKeeperAndKafka()
@@ -94,21 +94,21 @@ object KafkaStormDemo {
 
     zookeeperEmbedded = Some(new ZooKeeperEmbedded(zookeeperPort))
     for {z <- zookeeperEmbedded} {
-      val brokerConfig = new Properties
+      val brokerConfig: Properties = new Properties
       brokerConfig.put("zookeeper.connect", z.connectString)
       kafkaEmbedded = Some(new KafkaEmbedded(brokerConfig))
       for {k <- kafkaEmbedded} {
         k.start()
       }
 
-      val sessionTimeout = 30.seconds
-      val connectionTimeout = 30.seconds
+      val sessionTimeout: FiniteDuration = 30.seconds
+      val connectionTimeout: FiniteDuration = 30.seconds
       zkClient = Some(new ZkClient(z.connectString, sessionTimeout.toMillis.toInt, connectionTimeout.toMillis.toInt,
         ZKStringSerializer))
       for {
         zc <- zkClient
       } {
-        val topicConfig = new Properties
+        val topicConfig: Properties = new Properties
         AdminUtils.createTopic(zc, topic, numTopicPartitions, numTopicReplicationFactor, topicConfig)
       }
     }

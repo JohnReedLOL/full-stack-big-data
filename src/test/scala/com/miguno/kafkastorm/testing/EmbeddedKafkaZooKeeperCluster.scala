@@ -8,6 +8,7 @@ import com.miguno.kafkastorm.zookeeper.ZooKeeperEmbedded
 import kafka.message.MessageAndMetadata
 import org.apache.curator.test.InstanceSpec
 
+import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.util.{Success, Try}
 
@@ -30,8 +31,8 @@ class EmbeddedKafkaZooKeeperCluster(zookeeperPort: Integer = InstanceSpec.getRan
   var zookeeper: ZooKeeperEmbedded = _
   var kafka: KafkaEmbedded = _
 
-  val consumerApps = collection.mutable.Buffer[KafkaConsumerApp[_]]()
-  val producerApps = collection.mutable.Buffer[KafkaProducerApp]()
+  val consumerApps: mutable.Buffer[KafkaConsumerApp[_]] = collection.mutable.Buffer[KafkaConsumerApp[_]]()
+  val producerApps: mutable.Buffer[KafkaProducerApp] = collection.mutable.Buffer[KafkaProducerApp]()
 
   // We intentionally use a fail-fast approach here.  This makes the downstream test code simpler because we want our
   // tests to fail immediately in case we run into problems here.
@@ -42,8 +43,8 @@ class EmbeddedKafkaZooKeeperCluster(zookeeperPort: Integer = InstanceSpec.getRan
 
     // Start embedded Kafka broker
     kafka = {
-      val config = {
-        val p = new Properties
+      val config: Properties = {
+        val p: Properties = new Properties
         p.put("zookeeper.connect", zookeeper.connectString)
         p.put("port", kafkaPort.toString)
         p.putAll(brokerConfig)
@@ -85,7 +86,7 @@ class EmbeddedKafkaZooKeeperCluster(zookeeperPort: Integer = InstanceSpec.getRan
    * @return
    */
   def createProducer(topic: String, config: Properties): Try[KafkaProducerApp] = {
-    val producer = new KafkaProducerApp(kafka.brokerList, config, Option(topic))
+    val producer: KafkaProducerApp = new KafkaProducerApp(kafka.brokerList, config, Option(topic))
     producerApps += producer
     Success(producer)
   }
@@ -100,17 +101,17 @@ class EmbeddedKafkaZooKeeperCluster(zookeeperPort: Integer = InstanceSpec.getRan
    */
   def createAndStartConsumer[T](topic: String,
                                 consume: (MessageAndMetadata[Key, Val], ConsumerTaskContext) => Unit): Try[KafkaConsumerApp[T]] = {
-    val consumerApp = {
+    val consumerApp: KafkaConsumerApp[T] = {
       val numStreams = 1
-      val config = {
-        val c = new Properties
+      val config: Properties = {
+        val c: Properties = new Properties
         c.put("group.id", "kafka-storm-starter-test-consumer")
         c
       }
       new KafkaConsumerApp[T](topic, zookeeper.connectString, numStreams, config)
     }
     consumerApp.startConsumers(f = (m: MessageAndMetadata[Key, Val], c: ConsumerTaskContext, n: Option[T]) => consume(m, c))
-    val waitForConsumerStartup = 300.millis
+    val waitForConsumerStartup: FiniteDuration = 300.millis
     Thread.sleep(waitForConsumerStartup.toMillis)
 
     consumerApps += consumerApp

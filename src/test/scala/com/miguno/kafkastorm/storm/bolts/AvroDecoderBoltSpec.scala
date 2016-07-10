@@ -19,8 +19,8 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
 
   private type AnyAvroSpecificRecordBase = Tweet
 
-  private val AnyTweet = new Tweet("ANY_USER_1", "ANY_TEXT_1", 1234.seconds.toSeconds)
-  private val AnyTweetInAvroBytes = Injection(AnyTweet)
+  private val AnyTweet: AnyAvroSpecificRecordBase = new Tweet("ANY_USER_1", "ANY_TEXT_1", 1234.seconds.toSeconds)
+  private val AnyTweetInAvroBytes: Array[Byte] = Injection(AnyTweet)
 
   describe("An AvroDecoderBolt") {
 
@@ -28,10 +28,10 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
       Given("no bolt")
 
       When("I create a bolt without customizing the input field name")
-      val bolt = new AvroDecoderBolt[AnyAvroSpecificRecordBase]
+      val bolt: AvroDecoderBolt[AnyAvroSpecificRecordBase] = new AvroDecoderBolt[AnyAvroSpecificRecordBase]
       And("the bolt receives a tuple")
-      val tuple = mock[Tuple]
-      val collector = mock[BasicOutputCollector]
+      val tuple: Tuple = mock[Tuple]
+      val collector: BasicOutputCollector = mock[BasicOutputCollector]
       bolt.execute(tuple, collector)
 
       Then("the bolt should read the field 'bytes' from the tuple")
@@ -43,10 +43,10 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
       Given("no bolt")
 
       When("I create a bolt with a custom input field name 'foobar'")
-      val bolt = new AvroDecoderBolt[AnyAvroSpecificRecordBase](inputField = "foobar")
+      val bolt: AvroDecoderBolt[AnyAvroSpecificRecordBase] = new AvroDecoderBolt[AnyAvroSpecificRecordBase](inputField = "foobar")
       And("the bolt receives a tuple")
-      val tuple = mock[Tuple]
-      val collector = mock[BasicOutputCollector]
+      val tuple: Tuple = mock[Tuple]
+      val collector: BasicOutputCollector = mock[BasicOutputCollector]
       bolt.execute(tuple, collector)
 
       Then("the bolt should read the field 'foobar' from the tuple")
@@ -56,13 +56,13 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
 
     it("should deserialize binary records into pojos and send the pojos to downstream bolts") {
       Given("a bolt of type Tweet")
-      val bolt = new AvroDecoderBolt[Tweet]
+      val bolt: AvroDecoderBolt[AnyAvroSpecificRecordBase] = new AvroDecoderBolt[Tweet]
       And("a Tweet record")
-      val tuple = mock[Tuple]
+      val tuple: Tuple = mock[Tuple]
       mwhen(tuple.getBinaryByField(anyString)).thenReturn(AnyTweetInAvroBytes)
 
       When("the bolt receives the Tweet record")
-      val collector = mock[BasicOutputCollector]
+      val collector: BasicOutputCollector = mock[BasicOutputCollector]
       bolt.execute(tuple, collector)
 
       Then("the bolt should send the decoded Tweet pojo to downstream bolts")
@@ -72,14 +72,14 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
 
     it("should skip over tuples that contain invalid binary records") {
       Given("a bolt of type Tweet")
-      val bolt = new AvroDecoderBolt[Tweet]
+      val bolt: AvroDecoderBolt[AnyAvroSpecificRecordBase] = new AvroDecoderBolt[Tweet]
       And("an invalid binary record")
-      val tuple = mock[Tuple]
-      val invalidBinaryRecord = Array[Byte](1, 2, 3, 4)
+      val tuple: Tuple = mock[Tuple]
+      val invalidBinaryRecord: Array[Byte] = Array[Byte](1, 2, 3, 4)
       mwhen(tuple.getBinaryByField(anyString)).thenReturn(invalidBinaryRecord)
 
       When("the bolt receives the record")
-      val collector = mock[BasicOutputCollector]
+      val collector: BasicOutputCollector = mock[BasicOutputCollector]
       bolt.execute(tuple, collector)
 
       Then("the bolt should not send any data to downstream bolts")
@@ -88,13 +88,13 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
 
     it("should skip over tuples for which reading fails") {
       Given("a bolt")
-      val bolt = new AvroDecoderBolt[AnyAvroSpecificRecordBase]
+      val bolt: AvroDecoderBolt[AnyAvroSpecificRecordBase] = new AvroDecoderBolt[AnyAvroSpecificRecordBase]
       And("a tuple from which one cannot read")
-      val tuple = mock[Tuple]
+      val tuple: Tuple = mock[Tuple]
       mwhen(tuple.getBinaryByField(anyString)).thenReturn(null)
 
       When("the bolt receives the tuple")
-      val collector = mock[BasicOutputCollector]
+      val collector: BasicOutputCollector = mock[BasicOutputCollector]
       bolt.execute(tuple, collector)
 
       Then("the bolt should not send any data to downstream bolts")
@@ -105,10 +105,10 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
       Given("no bolt")
 
       When("I create a bolt without customizing the output field name")
-      val bolt = new AvroDecoderBolt[Tweet]
+      val bolt: AvroDecoderBolt[AnyAvroSpecificRecordBase] = new AvroDecoderBolt[Tweet]
 
       Then("the bolt should declare a single output field named 'pojo'")
-      val declarer = mock[OutputFieldsDeclarer]
+      val declarer: OutputFieldsDeclarer = mock[OutputFieldsDeclarer]
       bolt.declareOutputFields(declarer)
       // We use ArgumentMatcher as a workaround because Storm's Field class does not implement a proper `equals()`
       // method, and Mockito relies on `equals()` for verification.  Because of that the following typical approach
@@ -120,10 +120,10 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
       Given("no bolt")
 
       When("I create a bolt with a custom output field name")
-      val bolt = new AvroDecoderBolt[Tweet](outputField = "myCustomFieldName")
+      val bolt: AvroDecoderBolt[AnyAvroSpecificRecordBase] = new AvroDecoderBolt[Tweet](outputField = "myCustomFieldName")
 
       Then("the bolt should declare a single output field with this custom name")
-      val declarer = mock[OutputFieldsDeclarer]
+      val declarer: OutputFieldsDeclarer = mock[OutputFieldsDeclarer]
       bolt.declareOutputFields(declarer)
       verify(declarer, times(1)).declare(argThat(FieldsEqualTo(new Fields("myCustomFieldName"))))
     }
@@ -136,7 +136,7 @@ class AvroDecoderBoltSpec extends FunSpec with Matchers with GivenWhenThen with 
       Given("a companion object")
 
       When("I ask it to create a bolt for type Tweet")
-      val bolt = AvroDecoderBolt.ofType(classOf[Tweet])
+      val bolt: AvroDecoderBolt[AnyAvroSpecificRecordBase] = AvroDecoderBolt.ofType(classOf[Tweet])
 
       Then("the bolt should be an AvroDecoderBolt")
       bolt shouldBe an[AvroDecoderBolt[_]]

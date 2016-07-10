@@ -40,7 +40,7 @@ class AvroKafkaSinkBolt[T <: SpecificRecordBase : Manifest](
   // this class in a Storm topology.
   //
   // See "SI-5919: Type tags (and Exprs as well) should be serializable" (https://issues.scala-lang.org/browse/SI-5919)
-  val tpe = manifest[T]
+  val tpe: Manifest[T] = manifest[T]
 
   // Must be transient because Logger is not serializable
   @transient lazy private val log: Logger = LoggerFactory.getLogger(classOf[AvroKafkaSinkBolt[T]])
@@ -61,7 +61,7 @@ class AvroKafkaSinkBolt[T <: SpecificRecordBase : Manifest](
   override def execute(tuple: Tuple, collector: BasicOutputCollector) {
     tuple.getValueByField(inputField) match {
       case pojo: T =>
-        val bytes = Injection(pojo)
+        val bytes: Array[Byte] = Injection(pojo)
         log.debug(("Encoded pojo " + pojo + " to Avro binary format" + Pos()).wrap)
         producer.send(bytes)
       case _ => log.error(("Could not decode binary data" + Pos()).wrap)
@@ -81,22 +81,21 @@ object AvroKafkaSinkBolt {
    * // Java example
    * AvroKafkaSinkBolt kafkaSinkBolt = AvroKafkaSinkBolt.ofType(Tweet.class)(brokerList, ...);
    * }}}
-   *
-   * @param cls
+    * @param cls
    * @tparam T
    * @return
    */
   def ofType[T <: SpecificRecordBase](cls: java.lang.Class[T])(
     producerFactory: KafkaProducerAppFactory,
-    inputFieldName: String = "pojo") = {
-    val manifest = Manifest.classType[T](cls)
+    inputFieldName: String = "pojo"): AvroKafkaSinkBolt[T] = {
+    val manifest: Manifest[T] = Manifest.classType[T](cls)
     newInstance[T](producerFactory, inputFieldName)(manifest)
   }
 
   private def newInstance[T <: SpecificRecordBase](
                                                     producerFactory: KafkaProducerAppFactory,
                                                     inputFieldName: String = "pojo")
-                                                  (implicit man: Manifest[T]) =
+                                                  (implicit man: Manifest[T]): AvroKafkaSinkBolt[T] =
     new AvroKafkaSinkBolt[T](producerFactory, inputFieldName)
 
 }

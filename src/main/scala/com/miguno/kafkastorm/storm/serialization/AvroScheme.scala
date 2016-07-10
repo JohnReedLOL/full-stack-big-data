@@ -6,8 +6,9 @@ import com.miguno.kafkastorm.storm.bolts.AvroDecoderBolt
 import com.twitter.bijection.Injection
 import com.twitter.bijection.avro.SpecificAvroCodecs
 import org.apache.avro.specific.SpecificRecordBase
+
 import scala.trace.{Pos, implicitlyFormatable}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 /**
  * A custom binaryAvro->pojoAvro `backtype.storm.spout.Scheme` to auto-deserialize a spout's incoming data.  You can
@@ -28,8 +29,7 @@ import scala.util.{Failure, Success}
  * spoutConfig.scheme = new SchemeAsMultiScheme(new AvroScheme[Tweet])
  * val kafkaSpout = new KafkaSpout(spoutConfig)
  * }}}
- *
- * @tparam T The type of the Avro record (e.g. a `Tweet`) based on the underlying Avro schema being used.  Must be
+  * @tparam T The type of the Avro record (e.g. a `Tweet`) based on the underlying Avro schema being used.  Must be
  *           a subclass of Avro's `SpecificRecordBase`.
  */
 class AvroScheme[T <: SpecificRecordBase : Manifest] extends Scheme {
@@ -40,21 +40,21 @@ class AvroScheme[T <: SpecificRecordBase : Manifest] extends Scheme {
   // submitting/running this class in a Storm topology.
   //
   // See "SI-5919: Type tags (and Exprs as well) should be serializable" (https://issues.scala-lang.org/browse/SI-5919)
-  val tpe = manifest[T]
+  val tpe: Manifest[T] = manifest[T]
 
   private val OutputFieldName = "pojo"
 
-  @transient lazy implicit private val specificAvroBinaryInjection = SpecificAvroCodecs.toBinary[T]
+  @transient lazy implicit private val specificAvroBinaryInjection: Injection[T, Array[Byte]] = SpecificAvroCodecs.toBinary[T]
 
   override def deserialize(bytes: Array[Byte]): java.util.List[AnyRef] = {
-    val result = Injection.invert(bytes)
+    val result: Try[T] = Injection.invert(bytes)
     result match {
       case Success(pojo) => new Values(pojo)
       case Failure(e) => throw new RuntimeException("Could not decode input bytes")
     }
   }
 
-  override def getOutputFields() = new Fields(OutputFieldName)
+  override def getOutputFields(): Fields = new Fields(OutputFieldName)
 
 }
 
@@ -67,16 +67,15 @@ object AvroScheme {
    * // in Java
    * AvroScheme avroScheme = AvroScheme.ofType(Tweet.class);
    * }}}
-   *
-   * @param cls
+    * @param cls
    * @tparam T
    * @return
    */
-  def ofType[T <: SpecificRecordBase](cls: java.lang.Class[T]) = {
-    val manifest = Manifest.classType[T](cls)
+  def ofType[T <: SpecificRecordBase](cls: java.lang.Class[T]): AvroScheme[T] = {
+    val manifest: Manifest[T] = Manifest.classType[T](cls)
     newInstance[T](manifest)
   }
 
-  private def newInstance[T <: SpecificRecordBase : Manifest] = new AvroScheme[T]
+  private def newInstance[T <: SpecificRecordBase : Manifest]: AvroScheme[T] = new AvroScheme[T]
 
 }

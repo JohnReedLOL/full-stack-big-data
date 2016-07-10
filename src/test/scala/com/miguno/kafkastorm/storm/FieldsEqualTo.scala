@@ -4,6 +4,7 @@ import backtype.storm.tuple.Fields
 import org.mockito.ArgumentMatcher
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 /**
  * [[org.mockito.ArgumentMatcher]] for Storm's [[backtype.storm.tuple.Fields]].
@@ -22,11 +23,11 @@ import scala.collection.JavaConverters._
  */
 class FieldsEqualTo(val expectedFields: Fields) extends ArgumentMatcher[Fields] {
   override def matches(o: scala.Any): Boolean = {
-    val fields = o.asInstanceOf[Fields].toList.asScala
+    val fields: mutable.Buffer[String] = o.asInstanceOf[Fields].toList.asScala
     fields == expectedFields.toList.asScala
   }
 }
 
 object FieldsEqualTo {
-  def apply(expFields: Fields) = new FieldsEqualTo(expFields)
+  def apply(expFields: Fields): FieldsEqualTo = new FieldsEqualTo(expFields)
 }
